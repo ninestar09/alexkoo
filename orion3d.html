@@ -51,7 +51,51 @@
 
 <body>
 
+  <!-- ======= Header ======= -->
+  <header id="header" class="header d-flex align-items-center fixed-top">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+
+      <a href="index.html" class="logo d-flex align-items-center  me-auto me-lg-0">
+        <i class="bi-9-square"></i>
+        <h1>Mr.Koo</h1>
+      </a>
+
+      <nav id="navbar" class="navbar">
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="orion3d.html" class="active">INTERACTIVE 3D</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav><!-- .navbar -->
+
+      <div class="header-social-links">
+        <a href="http://www.twitter.com/@ninestar09" class="twitter"><i class="bi bi-twitter"></i></a>
+        <a href="https://www.linkedin.com/in/skkoo" class="linkedin"><i class="bi bi-linkedin"></i></i></a>
+      </div>
+      <i class="mobile-nav-toggle mobile-nav-show bi bi-list"></i>
+      <i class="mobile-nav-toggle mobile-nav-hide d-none bi bi-x"></i>
+
+    </div>
+  </header><!-- End Header -->
+
   <main id="main" data-aos="fade" data-aos-delay="1500">
+
+    <!-- ======= Page Header ======= -->
+    <div class="page-header d-flex align-items-center">
+      <div class="container position-relative">
+        <div class="row d-flex justify-content-center">
+          <div class="col-lg-6 text-center">
+            <h2>INTERACTIVE 3D</h2>
+            <p>Interactive 3D viewer for NASA Orion spacecraft</p>
+
+            <!-- Remove this line -->
+            <!-- <a class="cta-btn" href="contact.html">Feel free to reachout</a> -->
+
+          </div>
+        </div>
+      </div>
+    </div><!-- End Page Header -->
 
     <!-- ======= INTERACTIVE 3D Viewer Section ======= -->
     <section id="orion3d" class="orion3d">
@@ -63,7 +107,7 @@
         <!-- Indicator overlay (hidden by default) -->
         <div id="indicator-overlay" class="indicator-overlay hidden">
             <div class="indicator-content">
-                <button id="close-indicator" class="close-button">Ã—</button>
+                <button id="close-indicator" class="close-button">+ù</button>
                 <h3 id="indicator-title">Part Name</h3>
                 <p id="indicator-description">Part description will appear here</p>
             </div>
@@ -80,7 +124,7 @@
         </div>
 
         <!-- Panel Toggle Button (outside panel to always be visible) -->
-        <button id="right-panel-toggle" class="right-panel-toggle">â–º</button>
+        <button id="right-panel-toggle" class="right-panel-toggle">Gû¦</button>
         
         <!-- Preset Buttons (shown when panel is hidden) -->
         <div id="preset-buttons" class="preset-buttons hidden">
@@ -96,13 +140,13 @@
             <div id="load-panel" class="panel-section">
                 <div class="panel-header">
                     <h3>Load Model</h3>
-                    <button id="load-panel-toggle" class="panel-toggle">âˆ’</button>
+                    <button id="load-panel-toggle" class="panel-toggle">GêÆ</button>
                 </div>
                 <div id="load-panel-content" class="panel-content">
                     <input type="file" id="model-file-input" accept=".gltf,.glb" style="display: none;">
                     <button id="load-model-button" class="panel-button">Load Model</button>
                     <div class="replace-model-dropdown">
-                        <button id="replace-model-button" class="panel-button">Replace Model â–¼</button>
+                        <button id="replace-model-button" class="panel-button">Replace Model Gû+</button>
                         <div id="replace-model-menu" class="replace-model-menu hidden">
                             <button class="replace-model-option" data-model="3D_WEB_VIEW/assets/models/NASA_Orion_GLTF_TEST1A.gltf">Model A</button>
                             <button class="replace-model-option" data-model="3D_WEB_VIEW/assets/models/NASA_Orion_GLTF_TEST1B.gltf">Model B</button>
@@ -115,7 +159,7 @@
             <div id="lighting-panel" class="panel-section">
                 <div class="panel-header">
                     <h3>Lighting & Environment</h3>
-                    <button id="lighting-toggle" class="panel-toggle">âˆ’</button>
+                    <button id="lighting-toggle" class="panel-toggle">GêÆ</button>
                 </div>
                 <div id="lighting-content" class="panel-content">
                 <!-- Background Controls -->
@@ -230,7 +274,7 @@
             <div id="outliner-panel" class="panel-section">
                 <div class="panel-header">
                     <h3>Scene Outliner</h3>
-                    <button id="outliner-toggle" class="panel-toggle">âˆ’</button>
+                    <button id="outliner-toggle" class="panel-toggle">GêÆ</button>
                 </div>
                 <div id="outliner-content" class="panel-content">
                     <div id="outliner-tree" class="outliner-tree"></div>
