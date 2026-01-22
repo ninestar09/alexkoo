@@ -81,221 +81,30 @@
 
   <main id="main" data-aos="fade" data-aos-delay="1500">
 
-    <!-- ======= Page Header ======= -->
-    <div class="page-header d-flex align-items-center">
-      <div class="container position-relative">
-        <div class="row d-flex justify-content-center">
-          <div class="col-lg-6 text-center">
-            <h2>INTERACTIVE 3D</h2>
-            <p>Interactive 3D viewer for NASA Orion spacecraft</p>
-
-            <!-- Remove this line -->
-            <!-- <a class="cta-btn" href="contact.html">Feel free to reachout</a> -->
-
-          </div>
+  <!-- ======= Page Header ======= -->
+  <div class="page-header d-flex align-items-center">
+    <div class="container position-relative">
+      <div class="row d-flex justify-content-center">
+        <div class="col-lg-6 text-center">
+          <h2>INTERACTIVE 3D</h2>
+          <p>Select an interactive experience.</p>
         </div>
       </div>
-    </div><!-- End Page Header -->
+    </div>
+  </div><!-- End Page Header -->
 
-    <!-- ======= INTERACTIVE 3D Viewer Section ======= -->
-    <section id="orion3d" class="orion3d">
-      <div class="container-fluid" style="padding: 0;">
-        
-        <!-- 3D Viewer Container - Full Width -->
-        <div id="canvas-container" style="width: 100%; height: 80vh; min-height: 600px; position: relative; margin-top: 20px;"></div>
-        
-        <!-- Indicator overlay (hidden by default) -->
-        <div id="indicator-overlay" class="indicator-overlay hidden">
-            <div class="indicator-content">
-                <button id="close-indicator" class="close-button">+ù</button>
-                <h3 id="indicator-title">Part Name</h3>
-                <p id="indicator-description">Part description will appear here</p>
-            </div>
+  <section id="interactive-menu" class="gallery">
+    <div class="container">
+      <div class="row justify-content-center g-4">
+        <div class="col-md-4 text-center">
+          <a href="cube-rain.html" class="btn-get-started">CUBE RAIN</a>
         </div>
-
-        <!-- Controls info -->
-        <div class="controls-info hidden">
-            <p><strong>Controls:</strong></p>
-            <p>Left Click + Drag: Rotate</p>
-            <p>Right Click + Drag: Pan</p>
-            <p>Scroll: Zoom</p>
-            <p>Click on parts: Show info</p>
-            <p>Press 'P': Toggle panel</p>
+        <div class="col-md-4 text-center">
+          <a href="orion3d-view.html" class="btn-get-started">ORION 3D</a>
         </div>
-
-        <!-- Panel Toggle Button (outside panel to always be visible) -->
-        <button id="right-panel-toggle" class="right-panel-toggle">Gû¦</button>
-        
-        <!-- Preset Buttons (shown when panel is hidden) -->
-        <div id="preset-buttons" class="preset-buttons hidden">
-            <button class="preset-button" data-part="Crew Module">Crew Module</button>
-            <button class="preset-button" data-part="European Service">European Service</button>
-            <button class="preset-button" data-part="Solar Arrays">Solar Arrays</button>
-            <button class="preset-button" data-part="Exhaust">Exhaust</button>
-        </div>
-        
-        <!-- Unified Right Side Panel -->
-        <div id="right-panel" class="right-panel">
-            <!-- Load Model Section -->
-            <div id="load-panel" class="panel-section">
-                <div class="panel-header">
-                    <h3>Load Model</h3>
-                    <button id="load-panel-toggle" class="panel-toggle">GêÆ</button>
-                </div>
-                <div id="load-panel-content" class="panel-content">
-                    <input type="file" id="model-file-input" accept=".gltf,.glb" style="display: none;">
-                    <button id="load-model-button" class="panel-button">Load Model</button>
-                    <div class="replace-model-dropdown">
-                        <button id="replace-model-button" class="panel-button">Replace Model Gû+</button>
-                        <div id="replace-model-menu" class="replace-model-menu hidden">
-                            <button class="replace-model-option" data-model="3D_WEB_VIEW/assets/models/NASA_Orion_GLTF_TEST1A.gltf">Model A</button>
-                            <button class="replace-model-option" data-model="3D_WEB_VIEW/assets/models/NASA_Orion_GLTF_TEST1B.gltf">Model B</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Lighting & Environment Panel -->
-            <div id="lighting-panel" class="panel-section">
-                <div class="panel-header">
-                    <h3>Lighting & Environment</h3>
-                    <button id="lighting-toggle" class="panel-toggle">GêÆ</button>
-                </div>
-                <div id="lighting-content" class="panel-content">
-                <!-- Background Controls -->
-                <div class="lighting-section">
-                    <h4 class="lighting-section-title">Background</h4>
-                    <div class="lighting-control">
-                        <label>Background Type:</label>
-                        <select id="background-type" class="lighting-select">
-                            <option value="stars" selected>Star Field</option>
-                            <option value="color">Solid Color</option>
-                        </select>
-                    </div>
-                    <div class="lighting-control" id="background-color-control" style="display: none;">
-                        <label>Background Color:</label>
-                        <input type="color" id="background-color" value="#000000" class="lighting-color-picker">
-                    </div>
-                    <div class="lighting-control">
-                        <label>Background Intensity: <span id="background-intensity-value">1.0</span></label>
-                        <input type="range" id="background-intensity" min="0" max="2" step="0.1" value="1.0" class="lighting-slider">
-                    </div>
-                </div>
-
-                <!-- Environment Controls (Model Reflections) -->
-                <div class="lighting-section">
-                    <h4 class="lighting-section-title">Environment (Model Reflections)</h4>
-                    <div class="lighting-control">
-                        <label>Environment Type:</label>
-                        <select id="environment-type" class="lighting-select">
-                            <option value="none">None</option>
-                            <option value="hdri" selected>HDRI Map</option>
-                        </select>
-                    </div>
-                    <div class="lighting-control" id="environment-hdri-control" style="display: none;">
-                        <label>HDRI File:</label>
-                        <input type="file" id="hdri-file-input" accept=".hdr,.exr" style="display: none;">
-                        <button id="load-hdri-button" class="lighting-button-small">Load Custom HDRI</button>
-                        <p style="font-size: 11px; color: #888; margin-top: 5px;">Default: Bevel_Reflection.exr</p>
-                    </div>
-                    <div class="lighting-control">
-                        <label>Environment Intensity: <span id="env-intensity-value">1.0</span></label>
-                        <input type="range" id="env-intensity" min="0" max="3" step="0.1" value="1.0" class="lighting-slider">
-                    </div>
-                </div>
-
-                <!-- Ambient Light Controls -->
-                <div class="lighting-section">
-                    <h4 class="lighting-section-title">Ambient Light</h4>
-                    <div class="lighting-control">
-                        <label>Intensity: <span id="ambient-intensity-value">0.5</span></label>
-                        <input type="range" id="ambient-intensity" min="0" max="2" step="0.1" value="0.5" class="lighting-slider">
-                    </div>
-                    <div class="lighting-control">
-                        <label>Color:</label>
-                        <input type="color" id="ambient-color" value="#404040" class="lighting-color-picker">
-                    </div>
-                </div>
-
-                <!-- Main Directional Light Controls -->
-                <div class="lighting-section">
-                    <h4 class="lighting-section-title">Main Light</h4>
-                    <div class="lighting-control">
-                        <label>Intensity: <span id="directional-intensity-value">1.0</span></label>
-                        <input type="range" id="directional-intensity" min="0" max="3" step="0.1" value="1.0" class="lighting-slider">
-                    </div>
-                    <div class="lighting-control">
-                        <label>Color:</label>
-                        <input type="color" id="directional-color" value="#ffffff" class="lighting-color-picker">
-                    </div>
-                    <div class="lighting-control">
-                        <label>X Position: <span id="directional-x-value">-5</span></label>
-                        <input type="range" id="directional-x" min="-10" max="10" step="0.5" value="-5" class="lighting-slider">
-                    </div>
-                    <div class="lighting-control">
-                        <label>Y Position: <span id="directional-y-value">5</span></label>
-                        <input type="range" id="directional-y" min="-10" max="10" step="0.5" value="5" class="lighting-slider">
-                    </div>
-                    <div class="lighting-control">
-                        <label>Z Position: <span id="directional-z-value">-5</span></label>
-                        <input type="range" id="directional-z" min="-10" max="10" step="0.5" value="-5" class="lighting-slider">
-                    </div>
-                </div>
-
-                <!-- Fill Light Controls -->
-                <div class="lighting-section">
-                    <h4 class="lighting-section-title">Fill Light</h4>
-                    <div class="lighting-control">
-                        <label>Intensity: <span id="fill-intensity-value">0.3</span></label>
-                        <input type="range" id="fill-intensity" min="0" max="2" step="0.1" value="0.3" class="lighting-slider">
-                    </div>
-                    <div class="lighting-control">
-                        <label>Color:</label>
-                        <input type="color" id="fill-color" value="#4a9eff" class="lighting-color-picker">
-                    </div>
-                </div>
-
-                <!-- Point Light Controls -->
-                <div class="lighting-section">
-                    <h4 class="lighting-section-title">Point Light</h4>
-                    <div class="lighting-control">
-                        <label>Intensity: <span id="point-intensity-value">0.5</span></label>
-                        <input type="range" id="point-intensity" min="0" max="2" step="0.1" value="0.5" class="lighting-slider">
-                    </div>
-                    <div class="lighting-control">
-                        <label>Color:</label>
-                        <input type="color" id="point-color" value="#4a9eff" class="lighting-color-picker">
-                    </div>
-                </div>
-
-            </div>
-
-            <!-- Outliner Panel -->
-            <div id="outliner-panel" class="panel-section">
-                <div class="panel-header">
-                    <h3>Scene Outliner</h3>
-                    <button id="outliner-toggle" class="panel-toggle">GêÆ</button>
-                </div>
-                <div id="outliner-content" class="panel-content">
-                    <div id="outliner-tree" class="outliner-tree"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Loading Indicator -->
-        <div id="loading-overlay" class="loading-overlay hidden">
-            <div class="loading-content">
-                <div class="loading-spinner"></div>
-                <h3 id="loading-title">Loading Model...</h3>
-                <div class="loading-progress-bar">
-                    <div id="loading-progress" class="loading-progress"></div>
-                </div>
-                <p id="loading-percent">0%</p>
-            </div>
-        </div>
-
       </div>
-    </section><!-- End INTERACTIVE 3D Section -->
+    </div>
+  </section>
 
   </main><!-- End #main -->
 
@@ -304,9 +113,6 @@
     <div class="container">
       <div class="copyright">
         &copy; Copyright <strong><span>Koomaster</span></strong>. All Rights Reserved
-      </div>
-      <div class="credits">
-        Designed by <a href="https://bootstrapmade.com/">BootstrapMade</a>
       </div>
     </div>
   </footer><!-- End Footer -->
@@ -327,9 +133,8 @@
   <!-- Template Main JS File -->
   <script src="assets/js/main.js"></script>
 
-  <!-- 3D Viewer Script - Must be loaded as module -->
-  <script type="module" src="3D_WEB_VIEW/main.js"></script>
-
 </body>
 
 </html>
+
+

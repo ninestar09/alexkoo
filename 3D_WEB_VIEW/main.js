@@ -491,8 +491,9 @@ class SatelliteViewer {
         // Show loading indicator
         this.showLoadingIndicator();
         
+        const modelUrl = new URL('./assets/models/Artemis2_Orion01.gltf', import.meta.url).toString();
         loader.load(
-            '3D_WEB_VIEW/assets/models/NASA_Orion_GLTF_TEST1A.gltf',
+            modelUrl,
             (gltf) => {
                 this.satellite = gltf.scene;
                 
@@ -859,9 +860,6 @@ class SatelliteViewer {
         const rightPanelToggle = document.getElementById('right-panel-toggle');
         const rightPanel = document.getElementById('right-panel');
         
-        if (!rightPanelToggle) {
-            console.error('Right panel toggle button not found!');
-        }
         if (!rightPanel) {
             console.error('Right panel not found!');
         }
@@ -873,14 +871,6 @@ class SatelliteViewer {
         // Hide panel on initial load (collapsed by default)
         if (rightPanel) {
             rightPanel.classList.add('collapsed');
-            if (rightPanelToggle) {
-                rightPanelToggle.textContent = '◄';
-                rightPanelToggle.classList.add('panel-collapsed');
-                // Ensure button is visible
-                rightPanelToggle.style.display = 'flex';
-                rightPanelToggle.style.visibility = 'visible';
-                rightPanelToggle.style.opacity = '1';
-            }
             // Show preset buttons when panel is collapsed
             if (presetButtons) presetButtons.classList.remove('hidden');
         }
@@ -888,16 +878,10 @@ class SatelliteViewer {
         // Function to toggle panel
         const toggleRightPanel = () => {
             const isCollapsed = rightPanel.classList.toggle('collapsed');
-            // Arrow indicates direction panel will move: ► when open (will close/slide right), ◄ when closed (will open/slide left)
-            rightPanelToggle.textContent = isCollapsed ? '◄' : '►';
-            // Update button class and position
+            // Show preset buttons when panel is collapsed
             if (isCollapsed) {
-                rightPanelToggle.classList.add('panel-collapsed');
-                // Show preset buttons when panel is collapsed
                 if (presetButtons) presetButtons.classList.remove('hidden');
             } else {
-                rightPanelToggle.classList.remove('panel-collapsed');
-                // Hide preset buttons when panel is open
                 if (presetButtons) presetButtons.classList.add('hidden');
                 // Reset preset when opening panel
                 this.resetPartPreset();
@@ -906,19 +890,13 @@ class SatelliteViewer {
         };
         
         // Initialize button state
-        if (rightPanel && rightPanelToggle) {
+        if (rightPanel) {
             if (rightPanel.classList.contains('collapsed')) {
-                rightPanelToggle.classList.add('panel-collapsed');
-                rightPanelToggle.textContent = '◄';
                 if (presetButtons) presetButtons.classList.remove('hidden');
             } else {
-                rightPanelToggle.classList.remove('panel-collapsed');
-                rightPanelToggle.textContent = '►';
                 if (presetButtons) presetButtons.classList.add('hidden');
             }
         }
-        
-        rightPanelToggle.addEventListener('click', toggleRightPanel);
         
         // Handle preset button clicks
         presetButtonElements.forEach(button => {
@@ -937,10 +915,10 @@ class SatelliteViewer {
             });
         });
         
-        // Keyboard shortcut: 'P' key to toggle panel
+        // Keyboard shortcut: 'I' key to toggle panel
         document.addEventListener('keydown', (e) => {
             // Only trigger if not typing in an input field
-            if (e.key.toLowerCase() === 'p' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            if (e.key.toLowerCase() === 'i' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
                 toggleRightPanel();
             }
@@ -1211,15 +1189,12 @@ class SatelliteViewer {
         // Settings panel removed - no longer needed
         if (settings.rightPanelCollapsed !== undefined) {
             const rightPanel = document.getElementById('right-panel');
-            const rightPanelToggle = document.getElementById('right-panel-toggle');
-            if (settings.rightPanelCollapsed) {
-                rightPanel.classList.add('collapsed');
-                rightPanelToggle.textContent = '◄';
-                rightPanelToggle.classList.add('panel-collapsed');
-            } else {
-                rightPanel.classList.remove('collapsed');
-                rightPanelToggle.textContent = '►';
-                rightPanelToggle.classList.remove('panel-collapsed');
+            if (rightPanel) {
+                if (settings.rightPanelCollapsed) {
+                    rightPanel.classList.add('collapsed');
+                } else {
+                    rightPanel.classList.remove('collapsed');
+                }
             }
         }
         
@@ -1479,15 +1454,12 @@ class SatelliteViewer {
         // Settings panel removed
         if (settings.rightPanelCollapsed !== undefined) {
                 const rightPanel = document.getElementById('right-panel');
-                const rightPanelToggle = document.getElementById('right-panel-toggle');
-                if (settings.rightPanelCollapsed) {
-                    rightPanel.classList.add('collapsed');
-                    rightPanelToggle.textContent = '◄';
-                    rightPanelToggle.classList.add('panel-collapsed');
-                } else {
-                    rightPanel.classList.remove('collapsed');
-                    rightPanelToggle.textContent = '►';
-                    rightPanelToggle.classList.remove('panel-collapsed');
+                if (rightPanel) {
+                    if (settings.rightPanelCollapsed) {
+                        rightPanel.classList.add('collapsed');
+                    } else {
+                        rightPanel.classList.remove('collapsed');
+                    }
                 }
             }
             
@@ -1705,10 +1677,7 @@ class SatelliteViewer {
                 document.getElementById('outliner-panel').classList.remove('collapsed');
                 // Settings panel removed
                 const rightPanel = document.getElementById('right-panel');
-                const rightPanelToggle = document.getElementById('right-panel-toggle');
                 rightPanel.classList.remove('collapsed');
-                rightPanelToggle.textContent = '►';
-                rightPanelToggle.classList.remove('panel-collapsed');
                 
                 alert('Settings reset to default values!');
                 console.log('Settings reset to defaults');
@@ -1726,6 +1695,11 @@ class SatelliteViewer {
         const backgroundColor = document.getElementById('background-color');
         const backgroundIntensity = document.getElementById('background-intensity');
         const backgroundIntensityValue = document.getElementById('background-intensity-value');
+
+        if (!backgroundType || !backgroundColorControl || !backgroundColor || !backgroundIntensity || !backgroundIntensityValue) {
+            console.warn('Background controls missing elements, skipping setup.');
+            return;
+        }
         
         // Initialize background intensity
         this.backgroundIntensity = parseFloat(backgroundIntensity.value) || 1.0;
@@ -1779,6 +1753,11 @@ class SatelliteViewer {
         const environmentHdriControl = document.getElementById('environment-hdri-control');
         const hdriFileInput = document.getElementById('hdri-file-input');
         const loadHdriButton = document.getElementById('load-hdri-button');
+
+        if (!environmentType || !environmentHdriControl || !hdriFileInput || !loadHdriButton) {
+            console.warn('Environment controls missing elements, skipping setup.');
+            return;
+        }
         
         const ensureEnvironmentMap = () => {
             if (this.environmentMap) {
@@ -1823,15 +1802,19 @@ class SatelliteViewer {
         const ambientIntensityValue = document.getElementById('ambient-intensity-value');
         const ambientColor = document.getElementById('ambient-color');
         
-        ambientIntensity.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            ambientIntensityValue.textContent = value.toFixed(1);
-            if (this.ambientLight) this.ambientLight.intensity = value;
-        });
+        if (ambientIntensity && ambientIntensityValue) {
+            ambientIntensity.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                ambientIntensityValue.textContent = value.toFixed(1);
+                if (this.ambientLight) this.ambientLight.intensity = value;
+            });
+        }
         
-        ambientColor.addEventListener('input', (e) => {
-            if (this.ambientLight) this.ambientLight.color.setHex(e.target.value.replace('#', '0x'));
-        });
+        if (ambientColor) {
+            ambientColor.addEventListener('input', (e) => {
+                if (this.ambientLight) this.ambientLight.color.setHex(e.target.value.replace('#', '0x'));
+            });
+        }
         
         // Directional light controls
         const directionalIntensity = document.getElementById('directional-intensity');
@@ -1844,19 +1827,23 @@ class SatelliteViewer {
         const directionalZ = document.getElementById('directional-z');
         const directionalZValue = document.getElementById('directional-z-value');
         
-        directionalIntensity.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            directionalIntensityValue.textContent = value.toFixed(1);
-            if (this.directionalLight) this.directionalLight.intensity = value;
-        });
+        if (directionalIntensity && directionalIntensityValue) {
+            directionalIntensity.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                directionalIntensityValue.textContent = value.toFixed(1);
+                if (this.directionalLight) this.directionalLight.intensity = value;
+            });
+        }
         
-        directionalColor.addEventListener('input', (e) => {
-            if (this.directionalLight) this.directionalLight.color.setHex(e.target.value.replace('#', '0x'));
-        });
+        if (directionalColor) {
+            directionalColor.addEventListener('input', (e) => {
+                if (this.directionalLight) this.directionalLight.color.setHex(e.target.value.replace('#', '0x'));
+            });
+        }
         
         // Store base position for directional light
         let directionalBasePos = new THREE.Vector3(-5, 5, -5);
-        if (this.directionalLight) {
+        if (this.directionalLight && directionalX && directionalY && directionalZ && directionalXValue && directionalYValue && directionalZValue) {
             directionalBasePos.copy(this.directionalLight.position);
             // Update slider values to match current position
             document.getElementById('directional-x').value = directionalBasePos.x;
@@ -1867,59 +1854,73 @@ class SatelliteViewer {
             document.getElementById('directional-z-value').textContent = directionalBasePos.z.toFixed(1);
         }
         
-        directionalX.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            directionalXValue.textContent = value.toFixed(1);
-            if (this.directionalLight) {
-                this.directionalLight.position.x = value;
-            }
-        });
+        if (directionalX && directionalXValue) {
+            directionalX.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                directionalXValue.textContent = value.toFixed(1);
+                if (this.directionalLight) {
+                    this.directionalLight.position.x = value;
+                }
+            });
+        }
         
-        directionalY.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            directionalYValue.textContent = value.toFixed(1);
-            if (this.directionalLight) {
-                this.directionalLight.position.y = value;
-            }
-        });
+        if (directionalY && directionalYValue) {
+            directionalY.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                directionalYValue.textContent = value.toFixed(1);
+                if (this.directionalLight) {
+                    this.directionalLight.position.y = value;
+                }
+            });
+        }
         
-        directionalZ.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            directionalZValue.textContent = value.toFixed(1);
-            if (this.directionalLight) {
-                this.directionalLight.position.z = value;
-            }
-        });
+        if (directionalZ && directionalZValue) {
+            directionalZ.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                directionalZValue.textContent = value.toFixed(1);
+                if (this.directionalLight) {
+                    this.directionalLight.position.z = value;
+                }
+            });
+        }
         
         // Fill light controls
         const fillIntensity = document.getElementById('fill-intensity');
         const fillIntensityValue = document.getElementById('fill-intensity-value');
         const fillColor = document.getElementById('fill-color');
         
-        fillIntensity.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            fillIntensityValue.textContent = value.toFixed(1);
-            if (this.fillLight) this.fillLight.intensity = value;
-        });
+        if (fillIntensity && fillIntensityValue) {
+            fillIntensity.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                fillIntensityValue.textContent = value.toFixed(1);
+                if (this.fillLight) this.fillLight.intensity = value;
+            });
+        }
         
-        fillColor.addEventListener('input', (e) => {
-            if (this.fillLight) this.fillLight.color.setHex(e.target.value.replace('#', '0x'));
-        });
+        if (fillColor) {
+            fillColor.addEventListener('input', (e) => {
+                if (this.fillLight) this.fillLight.color.setHex(e.target.value.replace('#', '0x'));
+            });
+        }
         
         // Point light controls
         const pointIntensity = document.getElementById('point-intensity');
         const pointIntensityValue = document.getElementById('point-intensity-value');
         const pointColor = document.getElementById('point-color');
         
-        pointIntensity.addEventListener('input', (e) => {
-            const value = parseFloat(e.target.value);
-            pointIntensityValue.textContent = value.toFixed(1);
-            if (this.pointLight) this.pointLight.intensity = value;
-        });
+        if (pointIntensity && pointIntensityValue) {
+            pointIntensity.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                pointIntensityValue.textContent = value.toFixed(1);
+                if (this.pointLight) this.pointLight.intensity = value;
+            });
+        }
         
-        pointColor.addEventListener('input', (e) => {
-            if (this.pointLight) this.pointLight.color.setHex(e.target.value.replace('#', '0x'));
-        });
+        if (pointColor) {
+            pointColor.addEventListener('input', (e) => {
+                if (this.pointLight) this.pointLight.color.setHex(e.target.value.replace('#', '0x'));
+            });
+        }
         
         // Environment intensity
         const envIntensity = document.getElementById('env-intensity');
@@ -1963,14 +1964,23 @@ class SatelliteViewer {
         this.setEnvironmentIntensity(this.currentEnvIntensity);
     }
     
+    resolveAssetUrl(assetPath) {
+        if (!assetPath) return '';
+        if (/^(https?:|data:|blob:)/i.test(assetPath)) {
+            return assetPath;
+        }
+        return new URL(assetPath.replace(/^\.\//, ''), import.meta.url).toString();
+    }
+
     loadHDRIFromPath(hdriPath) {
         if (!hdriPath) return;
-        const fileName = hdriPath.toLowerCase();
+        const resolvedPath = this.resolveAssetUrl(hdriPath);
+        const fileName = resolvedPath.toLowerCase();
         const isEXR = fileName.endsWith('.exr');
         const loader = isEXR ? new EXRLoader() : new RGBELoader();
         
         loader.load(
-            hdriPath,
+            resolvedPath,
             (texture) => {
                 if (this.environmentMap) {
                     this.environmentMap.dispose();
@@ -1983,7 +1993,7 @@ class SatelliteViewer {
                     this.applyEnvironmentMap(this.environmentMap);
                 }
                 
-                console.log(`HDRI loaded successfully from path: ${hdriPath}`);
+                console.log(`HDRI loaded successfully from path: ${resolvedPath}`);
             },
             undefined,
             (error) => {
@@ -1994,7 +2004,7 @@ class SatelliteViewer {
     }
     
     loadDefaultHDRI() {
-        this.loadHDRIFromPath('3D_WEB_VIEW/assets/hdri/Bevel_Reflection.exr');
+        this.loadHDRIFromPath('./assets/hdri/Bevel_Reflection.exr');
     }
     
     loadHDRI(file) {
@@ -2873,10 +2883,6 @@ class SatelliteViewer {
         // Normalize part name for matching (handle variations)
         const normalizedName = partName.toLowerCase().trim();
         
-        // Disable Solar Arrays for now - do nothing
-        if (normalizedName === 'solar arrays') {
-            return;
-        }
         const matchPatterns = {
             'crew module': ['crew module', 'heat shield'],
             'european service': ['european service', 'european service module', 'mid02', 'mid17', 'mid02 white', 'mid17 white'],
@@ -2926,6 +2932,45 @@ class SatelliteViewer {
             }
         });
         
+        const selectEuropeanServiceObject = (objects) => {
+            if (!objects.length) return null;
+            let best = objects[0];
+            let bestScore = -Infinity;
+            objects.forEach(obj => {
+                const partInfo = obj.userData.partInfo || this.partData.get(obj.uuid);
+                const name = (partInfo?.name || obj.name || '').toLowerCase();
+                let score = 0;
+                if (name.includes('european')) score += 5;
+                if (name.includes('service')) score += 4;
+                if (name.includes('module')) score += 3;
+                if (name.includes('esm')) score += 2;
+                if (name.includes('mid')) score += 1;
+                if (name.includes('panel') || name.includes('solar')) score -= 5;
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = obj;
+                }
+            });
+            return bestScore > -Infinity ? best : objects[0];
+        };
+
+        if (normalizedName === 'european service' && matchingObjects.length === 0) {
+            // Broader fallback search for European Service meshes
+            const candidates = [];
+            this.satellite.traverse((child) => {
+                if (!child.isMesh) return;
+                const partInfo = child.userData.partInfo || this.partData.get(child.uuid);
+                const name = (partInfo?.name || child.name || '').toLowerCase();
+                if (name.includes('service') || name.includes('european') || name.includes('esm') || name.includes('mid')) {
+                    candidates.push(child);
+                }
+            });
+            const best = selectEuropeanServiceObject(candidates);
+            if (best) {
+                matchingObjects.push(best);
+            }
+        }
+
         // Focus camera on matching parts if any found
         if (matchingObjects.length > 0) {
             const box = new THREE.Box3();
@@ -2941,7 +2986,7 @@ class SatelliteViewer {
                 // For Crew Module, European Service, Solar Arrays, and Exhaust, show popup label and focus without getting too close
                 if (normalizedName === 'crew module' || normalizedName === 'european service' || normalizedName === 'solar arrays' || normalizedName === 'exhaust') {
                     // Use a closer distance for better view
-                    const distance = maxDim * 2.2; // Closer to the object
+                    let distance = maxDim * 2.2; // Closer to the object
                     
                     let selectedObject = matchingObjects[0];
                     
@@ -2958,6 +3003,14 @@ class SatelliteViewer {
                         }
                     }
                     
+                    // For European Service, prefer meshes that match service names
+                    if (normalizedName === 'european service') {
+                        const best = selectEuropeanServiceObject(matchingObjects);
+                        if (best) {
+                            selectedObject = best;
+                        }
+                    }
+
                     // For Solar Arrays, find the lower-left panel (lowest Y, leftmost X) to match the image
                     if (normalizedName === 'solar arrays' && matchingObjects.length > 0) {
                         if (matchingObjects.length === 1) {
@@ -2987,9 +3040,9 @@ class SatelliteViewer {
                     // Define camera position first (needed for Solar Arrays calculation)
                     let offset;
                     if (normalizedName === 'solar arrays') {
-                        // For Solar Arrays: match the reference image - central view, slightly angled
-                        // Camera positioned to show satellite centrally with lower-left panel in focus
-                        offset = new THREE.Vector3(-0.3, 0.2, -1.2).multiplyScalar(distance);
+                        // For Solar Arrays: tuned preset
+                        distance = maxDim * 1.0;
+                        offset = new THREE.Vector3(-0.2, 0.10, -1.1).multiplyScalar(distance);
                     } else if (normalizedName === 'exhaust') {
                         // For Exhaust: show the opposite side with gentle rotation approach
                         // Start further away and rotate around
@@ -2998,12 +3051,8 @@ class SatelliteViewer {
                         // For Crew Module: front view with circular structure visible on the right
                         offset = new THREE.Vector3(-0.4, 0.15, -1.1).multiplyScalar(distance);
                     } else if (normalizedName === 'european service') {
-                        // For European Service: right side view, rotated 10 degrees to the left
-                        const angle10Deg = -Math.PI / 18; // -10 degrees in radians (opposite direction)
-                        const cos10 = Math.cos(angle10Deg);
-                        const sin10 = Math.sin(angle10Deg);
-                        // Rotate the right-side position (1, 0, 0) 10 degrees counter-clockwise around Y-axis
-                        offset = new THREE.Vector3(cos10, 0.15, sin10).multiplyScalar(distance);
+                        // For European Service: tighter right-facing angle (closer to reference)
+                        offset = new THREE.Vector3(2.75, 0.05, 0.45).multiplyScalar(distance);
                     } else {
                         // Default fallback
                         offset = new THREE.Vector3(-0.5, 0.2, -1).multiplyScalar(distance);
@@ -3127,9 +3176,35 @@ class SatelliteViewer {
                                 const finalIntersection = surfacePoint.clone();
                                 selectedObject.localToWorld(finalIntersection);
                                 
-                                // Show indicator with the accurately calculated point
+                                // Ensure label shows Solar Arrays and show indicator with the accurately calculated point
+                                selectedObject.userData.partInfo = {
+                                    name: 'Solar Arrays',
+                                    description: 'Part of the Solar Arrays component.'
+                                };
                                 this.showIndicator(selectedObject, finalIntersection);
-                            }, 1600); // Wait for camera animation to complete (1500ms + buffer)
+                                this.updateIndicatorPosition();
+                                const overlay = document.getElementById('indicator-overlay');
+                                if (overlay) overlay.classList.remove('hidden');
+                        }, 1600); // Wait for camera animation to complete (1500ms + buffer)
+                            
+                            // Fallback: ensure popup appears even if selection is slow
+                            setTimeout(() => {
+                                const overlay = document.getElementById('indicator-overlay');
+                                if (overlay && overlay.classList.contains('hidden')) {
+                                    selectedObject.userData.partInfo = {
+                                        name: 'Solar Arrays',
+                                        description: 'Part of the Solar Arrays component.'
+                                    };
+                                    this.showIndicator(selectedObject, intersectionPoint);
+                                    this.updateIndicatorPosition();
+                                    overlay.classList.remove('hidden');
+                                }
+                            }, 1900);
+                        } else if (normalizedName === 'european service') {
+                            // Simulate a "double-click" reveal after the camera settles
+                            setTimeout(() => {
+                                this.showIndicator(selectedObject, intersectionPoint);
+                            }, 1600);
                         } else {
                             // Show the indicator immediately for other parts
                             this.showIndicator(selectedObject, intersectionPoint);
@@ -3244,6 +3319,51 @@ class SatelliteViewer {
                     };
                     
                     animateCamera();
+                }
+            }
+        } else if (normalizedName === 'european service' && this.satellite) {
+            // Fallback: use entire model bounds if no matching meshes
+            const box = new THREE.Box3().setFromObject(this.satellite);
+            if (!box.isEmpty()) {
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const distance = maxDim * 2.2;
+
+                const targetPosition = center.clone().add(
+                    new THREE.Vector3(-0.6, 0.1, -1.1).multiplyScalar(distance)
+                );
+                const lookAtPoint = center.clone();
+
+                const startPosition = this.camera.position.clone();
+                const startTarget = this.controls.target.clone();
+                const startTime = performance.now();
+                const duration = 1500;
+
+                const animateCamera = () => {
+                    const elapsed = performance.now() - startTime;
+                    const progress = Math.min(elapsed / duration, 1);
+                    const easeProgress = progress < 0.5
+                        ? 2 * progress * progress
+                        : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+                    this.camera.position.lerpVectors(startPosition, targetPosition, easeProgress);
+                    this.controls.target.lerp(lookAtPoint, easeProgress);
+                    this.controls.update();
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animateCamera);
+                    }
+                };
+
+                animateCamera();
+
+                const fallbackMesh = this.satellite.getObjectByProperty('isMesh', true);
+                if (fallbackMesh) {
+                    const intersectionPoint = center.clone();
+                    setTimeout(() => {
+                        this.showIndicator(fallbackMesh, intersectionPoint);
+                    }, 1600);
                 }
             }
         }
@@ -3527,7 +3647,6 @@ class SatelliteViewer {
     updatePanelHeight() {
         const container = document.getElementById('canvas-container');
         const rightPanel = document.getElementById('right-panel');
-        const rightPanelToggle = document.getElementById('right-panel-toggle');
         
         if (!container || !rightPanel) return;
         
@@ -3540,18 +3659,7 @@ class SatelliteViewer {
         rightPanel.style.height = containerHeight + 'px';
         rightPanel.style.top = containerTop + 'px';
         
-        // Update toggle button position to align with canvas container top
-        if (rightPanelToggle) {
-            const isCollapsed = rightPanel.classList.contains('collapsed');
-            // Position button at the top of the canvas container
-            if (isCollapsed) {
-                rightPanelToggle.style.top = (containerRect.top + 20) + 'px';
-                rightPanelToggle.style.bottom = 'auto';
-            } else {
-                rightPanelToggle.style.top = (containerRect.top + 20) + 'px';
-                rightPanelToggle.style.bottom = 'auto';
-            }
-        }
+        // Toggle button removed; no position updates needed.
     }
 
     animate() {

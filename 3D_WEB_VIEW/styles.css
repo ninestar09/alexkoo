@@ -137,7 +137,8 @@ body {
 .right-panel-toggle {
     position: fixed !important;
     right: 350px;
-    top: 20px;
+    bottom: 20px;
+    top: auto;
     width: 35px;
     height: 35px;
     background: rgba(20, 20, 30, 0.98) !important;
@@ -175,6 +176,8 @@ body {
     opacity: 1 !important;
     min-width: 35px;
     min-height: 35px;
+    bottom: 20px;
+    top: auto;
 }
 
 /* Preset Buttons Panel */
