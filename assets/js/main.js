@@ -88,10 +88,114 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     window.addEventListener('load', togglescrollTop);
     document.addEventListener('scroll', togglescrollTop);
-    scrollTop.addEventListener('click', window.scrollTo({
+    scrollTop.addEventListener('click', () => window.scrollTo({
       top: 0,
       behavior: 'smooth'
     }));
+  }
+
+  /**
+   * SPA-style nav: keep header + icons, only swap main content (no full page reload)
+   */
+  const appContent = document.getElementById('app-content');
+  const SPA_PAGES = ['index.html', 'about.html', 'contact.html', 'interactive3d.html'];
+
+  function getPath(href) {
+    if (!href) return '';
+    const path = href.split('?')[0].split('#')[0];
+    return path.endsWith('/') ? path + 'index.html' : path;
+  }
+
+  function isSpaPage(path) {
+    const name = path.replace(/^.*\//, '');
+    return SPA_PAGES.includes(name) || (path === '' || path === '/' || path.endsWith('/'));
+  }
+
+  function setActiveNav(href) {
+    const navPill = document.querySelector('.navbar-pill');
+    if (!navPill) return;
+    const path = getPath(href);
+    const name = path.replace(/^.*\//, '') || 'index.html';
+    navPill.querySelectorAll('a[href]').forEach(a => {
+      const aPath = getPath(a.getAttribute('href'));
+      const aName = aPath.replace(/^.*\//, '') || 'index.html';
+      a.classList.toggle('active', aName === name);
+    });
+    const active = navPill.querySelector('a.active');
+    if (active && window.positionPillIndicator) window.positionPillIndicator(active);
+  }
+
+  function loadPage(href, pushState = true) {
+    if (!appContent) return;
+    const url = new URL(href, window.location.href);
+    const path = getPath(url.pathname);
+    if (!isSpaPage(path)) {
+      window.location.href = href;
+      return;
+    }
+    fetch(url.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+      .then(html => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const newContent = doc.getElementById('app-content');
+        if (!newContent) { window.location.href = href; return; }
+        appContent.innerHTML = newContent.innerHTML;
+        if (doc.title) document.title = doc.title;
+        setActiveNav(href);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (pushState) history.pushState({ path: href }, '', href);
+        if (typeof AOS !== 'undefined') AOS.refresh();
+      })
+      .catch(() => { window.location.href = href; });
+  }
+
+  if (appContent) {
+    document.querySelectorAll('.navbar-pill a[href]').forEach(link => {
+      link.addEventListener('click', function(e) {
+        const href = this.getAttribute('href');
+        if (!href || href.startsWith('#')) return;
+        if (href.startsWith('http') && !href.includes(window.location.host)) return;
+        if (!isSpaPage(getPath(href))) return;
+        e.preventDefault();
+        this.classList.add('active');
+        document.querySelectorAll('.navbar-pill a.active').forEach(a => { if (a !== this) a.classList.remove('active'); });
+        if (window.positionPillIndicator) window.positionPillIndicator(this);
+        loadPage(new URL(href, window.location.href).href);
+      });
+    });
+
+    window.addEventListener('popstate', (e) => {
+      if (e.state && e.state.path) loadPage(e.state.path, false);
+      else loadPage(window.location.href, false);
+    });
+  }
+
+  /**
+   * Pill nav: sliding oval indicator
+   */
+  const navPill = document.querySelector('.navbar-pill');
+  const navPillIndicator = document.getElementById('navPillIndicator');
+  if (navPill && navPillIndicator) {
+    function positionIndicator(el) {
+      if (!el || !navPill) return;
+      const navRect = navPill.getBoundingClientRect();
+      const linkRect = el.getBoundingClientRect();
+      navPillIndicator.style.left = (linkRect.left - navRect.left) + 'px';
+      navPillIndicator.style.top = (linkRect.top - navRect.top) + 'px';
+      navPillIndicator.style.width = linkRect.width + 'px';
+      navPillIndicator.style.height = linkRect.height + 'px';
+      navPillIndicator.style.opacity = '1';
+    }
+    window.positionPillIndicator = positionIndicator;
+
+    const activeLink = navPill.querySelector('a.active');
+    if (activeLink) positionIndicator(activeLink);
+
+    window.addEventListener('resize', () => {
+      const active = navPill.querySelector('a.active');
+      if (active) positionIndicator(active);
+    });
   }
 
   /**
@@ -104,28 +208,33 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Init swiper slider with 1 slide at once in desktop view
    */
-  new Swiper('.slides-1', {
-    speed: 600,
-    loop: true,
-    autoplay: {
-      delay: 30000,
-      disableOnInteraction: false
-    },
-    slidesPerView: 'auto',
-    pagination: {
-      el: '.swiper-pagination',
-      type: 'bullets',
-      clickable: true
-    },
-    navigation: {
-      nextEl: '.swiper-button-next',
-      prevEl: '.swiper-button-prev',
-    }
-  });
+  const slides1 = document.querySelector('.slides-1');
+  if (slides1) {
+    new Swiper('.slides-1', {
+      speed: 600,
+      loop: true,
+      autoplay: {
+        delay: 30000,
+        disableOnInteraction: false
+      },
+      slidesPerView: 'auto',
+      pagination: {
+        el: '.swiper-pagination',
+        type: 'bullets',
+        clickable: true
+      },
+      navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev',
+      }
+    });
+  }
 
   /**
    * Init swiper slider with 3 slides at once in desktop view
    */
+  const slides3 = document.querySelector('.slides-3');
+  if (slides3) {
   new Swiper('.slides-3', {
     speed: 600,
     loop: true,
@@ -154,6 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   });
+  }
 
   /**
    * Animation on scroll function and init
