@@ -142,6 +142,28 @@ h6 {
   }
 }
 
+/* Mobile/vertical: prevent title clipping – more top padding, safe horizontal padding */
+@media (max-width: 767px) {
+  .page-header {
+    padding-top: 180px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .page-header .container {
+    padding-left: 12px;
+    padding-right: 12px;
+    max-width: 100%;
+  }
+
+  .page-header h2 {
+    font-size: 32px;
+    padding-left: 4px;
+    padding-right: 4px;
+    word-break: break-word;
+  }
+}
+
 .page-header p {
   color: rgba(255, 255, 255, 0.8);
 }
@@ -790,6 +812,8 @@ h6 {
   .header .container-fluid {
     flex-wrap: wrap;
     gap: 10px;
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
   .header .navbar {
@@ -799,10 +823,20 @@ h6 {
     position: relative;
     left: auto;
     transform: none;
+    padding: 0 4px;
   }
 
   .header .navbar ul {
     justify-content: center;
+    padding: 5px 6px;
+    gap: 2px;
+  }
+
+  .navbar-pill a,
+  .navbar-pill a:focus {
+    padding: 6px 8px;
+    font-size: 10px;
+    letter-spacing: 0.3px;
   }
 }
 
@@ -1450,6 +1484,26 @@ h6 {
 @media (min-aspect-ratio: 16/9) {
   .hero {
     min-height: 100vh;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero {
+    padding-top: 180px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .hero .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .hero h2 {
+    font-size: 28px;
+    padding-left: 4px;
+    padding-right: 4px;
+    word-break: break-word;
   }
 }
 

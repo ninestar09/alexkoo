@@ -101,12 +101,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateHeroScrollFrame() {
       const scrollY = window.scrollY;
+      const scrollRange = heroSection.offsetHeight || window.innerHeight;
+
       if (scrollY > 0) {
         virtualScroll = ANIMATION_SCROLL_RANGE;
-        setFrameFromProgress(1);
+        var progress = Math.min(1, scrollY / scrollRange);
+        setFrameFromProgress(progress);
         return;
       }
-      const progress = virtualScroll / ANIMATION_SCROLL_RANGE;
+      var progress = virtualScroll / ANIMATION_SCROLL_RANGE;
       setFrameFromProgress(progress);
     }
 
@@ -143,6 +146,8 @@ document.addEventListener('DOMContentLoaded', () => {
         heroTicking = true;
       }
     }, { passive: true });
+
+    window.addEventListener('resize', function() { updateHeroScrollFrame(); });
     updateHeroScrollFrame();
   }
 
