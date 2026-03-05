@@ -91,6 +91,8 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Virtual scroll range: first N px of “scroll” only advance the sequence (no page scroll) */
     const ANIMATION_SCROLL_RANGE = 5000;
     let virtualScroll = 0;
+    var hasReachedEnd = false;
+    var maxProgressReached = 0;
 
     function setFrameFromProgress(progress) {
       const p = Math.min(1, Math.max(0, progress));
@@ -101,16 +103,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateHeroScrollFrame() {
       const scrollY = window.scrollY;
-      const scrollRange = heroSection.offsetHeight || window.innerHeight;
+      const scrollRange = Math.max(1, heroSection.offsetHeight || window.innerHeight);
 
-      if (scrollY > 0) {
-        virtualScroll = ANIMATION_SCROLL_RANGE;
-        var progress = Math.min(1, scrollY / scrollRange);
-        setFrameFromProgress(progress);
+      if (scrollY <= 0) {
+        hasReachedEnd = false;
+        maxProgressReached = 0;
+        virtualScroll = Math.min(virtualScroll, ANIMATION_SCROLL_RANGE);
+        setFrameFromProgress(virtualScroll / ANIMATION_SCROLL_RANGE);
         return;
       }
-      var progress = virtualScroll / ANIMATION_SCROLL_RANGE;
-      setFrameFromProgress(progress);
+
+      if (hasReachedEnd) {
+        setFrameFromProgress(1);
+        return;
+      }
+
+      if (scrollY >= scrollRange) {
+        hasReachedEnd = true;
+        maxProgressReached = 1;
+        setFrameFromProgress(1);
+        return;
+      }
+
+      var progress = scrollY / scrollRange;
+      maxProgressReached = Math.max(maxProgressReached, progress);
+      virtualScroll = ANIMATION_SCROLL_RANGE;
+      setFrameFromProgress(maxProgressReached);
     }
 
     /* Wheel at top: first ANIMATION_SCROLL_RANGE only drives frames, no page scroll */
