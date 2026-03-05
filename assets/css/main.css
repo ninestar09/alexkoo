@@ -34,7 +34,34 @@
 body {
   font-family: var(--font-default);
   color: var(--color-default);
-  background-color: #000;
+  background-color: #0a0a12;
+  position: relative;
+}
+
+/* Full-page parallax background – image path: assets/img/background-parallax.png */
+.bg-parallax {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background-image: url("../img/background-parallax.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  will-change: transform;
+}
+
+/* Overlay: lighter so background image yellow/cream highlights show through */
+.bg-parallax::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 10, 18, 0.25) 0%, rgba(10, 10, 18, 0.65) 100%);
+  pointer-events: none;
+}
+
+/* INTERACTIVE 3D page: very light overlay so wave + blur yellow background is clearly visible */
+body.page-interactive3d .bg-parallax::after {
+  background: linear-gradient(180deg, rgba(10, 10, 18, 0.12) 0%, rgba(10, 10, 18, 0.35) 100%);
 }
 
 a {
@@ -119,22 +146,37 @@ h6 {
   color: rgba(255, 255, 255, 0.8);
 }
 
+/* Same glass style as index hero "Feel Free to reachout" */
 .page-header .cta-btn {
   font-family: var(--font-primary);
-  font-weight: 400;
+  font-weight: 500;
   font-size: 14px;
   display: inline-block;
-  padding: 12px 40px;
-  border-radius: 4px;
+  padding: 14px 44px;
+  border-radius: 9999px;
   letter-spacing: 1px;
   text-transform: uppercase;
-  transition: 0.3s;
-  color: #fff;
-  background: var(--color-primary);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+  color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .page-header .cta-btn:hover {
-  background: rgba(161, 70, 197, 0.8);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.12),
+    0 8px 28px rgba(0, 0, 0, 0.3);
 }
 
 /*--------------------------------------------------------------
@@ -1048,17 +1090,21 @@ h6 {
 
 .gallery-single .portfolio-info .btn-visit {
   padding: 8px 40px;
-  background: var(--color-primary);
   color: #fff;
   border-radius: 50px;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
-  box-shadow: 0 4px 12px rgba(161, 70, 197, 0.3);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+  background: rgba(161, 70, 197, 0.4);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
 .gallery-single .portfolio-info .btn-visit:hover {
-  background: rgba(161, 70, 197, 0.9);
+  background: rgba(161, 70, 197, 0.55);
+  border-color: rgba(255, 255, 255, 0.35);
   transform: translateY(-2px);
-  box-shadow: 0 6px 18px rgba(161, 70, 197, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 6px 22px rgba(161, 70, 197, 0.35);
 }
 
 .gallery-single .portfolio-description h2 {
@@ -1336,17 +1382,36 @@ h6 {
   padding: 10px 12px;
 }
 
+/* Glass style – same as hero / page-header CTA */
 .contact .php-email-form button[type=submit] {
-  background: var(--color-primary);
-  border: 0;
-  padding: 10px 35px;
-  color: #fff;
-  transition: 0.4s;
-  border-radius: 4px;
+  font-family: var(--font-primary);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 14px 44px;
+  border-radius: 9999px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+  color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .contact .php-email-form button[type=submit]:hover {
-  background: rgba(161, 70, 197, 0.8);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.12),
+    0 8px 28px rgba(0, 0, 0, 0.3);
 }
 
 @-webkit-keyframes animate-loading {
@@ -1372,13 +1437,61 @@ h6 {
 /*--------------------------------------------------------------
 # Hero Section
 --------------------------------------------------------------*/
+/* Hero: tall enough to show full 16:9 frame without cropping */
 .hero {
   width: 100%;
-  min-height: 30vh;
-  background: #000;
-  background-size: cover;
+  min-height: 56.25vw; /* 16:9 aspect ratio – full frame visible */
+  background: transparent;
   position: relative;
   padding: 140px 0 60px 0;
+  overflow: hidden;
+}
+
+@media (min-aspect-ratio: 16/9) {
+  .hero {
+    min-height: 100vh;
+  }
+}
+
+/* Scroll-driven animation: 16:9 frame sequence – no crop (contain) */
+.hero-scroll-frames {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+/* Soft blend from header into frame sequence – no hard cutoff */
+.hero::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.6) 50%, transparent 100%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-scroll-frames img {
+  position: absolute;
+  left: 50%;
+  top: 54%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+.hero .container {
+  position: relative;
+  z-index: 2;
 }
 
 .hero h2 {
@@ -1413,25 +1526,40 @@ h6 {
   font-size: 18px;
 }
 
+/* Glass-style CTA – frosted / liquid glass (hero "Feel Free to reachout") */
 .hero .btn-get-started {
   font-family: var(--font-primary);
-  font-weight: 400;
+  font-weight: 500;
   font-size: 14px;
   display: inline-block;
-  padding: 12px 40px;
-  border-radius: 4px;
+  padding: 14px 44px;
+  border-radius: 9999px;
   letter-spacing: 1px;
   text-transform: uppercase;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
-  color: #fff;
-  background: var(--color-primary);
-  box-shadow: 0 4px 14px rgba(161, 70, 197, 0.35);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+  color: rgba(255, 255, 255, 0.95);
+  /* Frosted fill: subtle vertical gradient (lighter top, slightly darker bottom) */
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  /* Reflective border – light silver, reads on dark */
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  /* Inner highlight top/left, inner shadow bottom/right, soft outer drop shadow */
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .hero .btn-get-started:hover {
-  background: rgba(161, 70, 197, 0.9);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 22px rgba(161, 70, 197, 0.45);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.12),
+    0 8px 28px rgba(0, 0, 0, 0.3);
 }
 
 .back-to-interactive {
@@ -1507,13 +1635,15 @@ h6 {
   font-family: var(--font-primary);
   letter-spacing: 1px;
   transition: 0.3s ease;
+  /* Subtle blur yellow / amber glow so warm tones show on this page */
+  box-shadow: 0 0 40px rgba(220, 180, 100, 0.12), 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .interactive-card:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
   transform: translateY(-2px);
-  box-shadow: 0 10px 20px rgba(50, 131, 207, 0.2);
+  box-shadow: 0 0 50px rgba(220, 180, 100, 0.2), 0 10px 20px rgba(50, 131, 207, 0.2);
 }
 
 .interactive-card.is-active {
@@ -1539,6 +1669,31 @@ h6 {
 
 .interactive-label {
   font-size: 14px;
+}
+
+/* Soft blur yellow / amber behind the interactive 3D section */
+#interactive-menu {
+  position: relative;
+}
+
+#interactive-menu::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  max-width: 600px;
+  height: 200px;
+  background: radial-gradient(ellipse at center, rgba(220, 190, 120, 0.15) 0%, rgba(220, 180, 100, 0.06) 40%, transparent 70%);
+  filter: blur(40px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#interactive-menu .container {
+  position: relative;
+  z-index: 1;
 }
 
 .interactive-content {

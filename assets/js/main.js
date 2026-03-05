@@ -79,6 +79,94 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /**
+   * Hero scroll-driven frame animation (90 frames, 16:9).
+   * First ~50 scroll units don’t move the page – they only drive the sequence; then page scrolls.
+   */
+  const heroScrollFrameEl = document.getElementById('heroScrollFrame');
+  const heroSection = document.getElementById('hero');
+  if (heroScrollFrameEl && heroSection) {
+    const TOTAL_FRAMES = 90;
+    const FRAME_EXT = 'jpg'; // or 'png'
+    const FRAME_PATH = 'assets/img/hero-scroll/frame_';
+    /* Virtual scroll range: first N px of “scroll” only advance the sequence (no page scroll) */
+    const ANIMATION_SCROLL_RANGE = 5000;
+    let virtualScroll = 0;
+
+    function setFrameFromProgress(progress) {
+      const p = Math.min(1, Math.max(0, progress));
+      const frameIndex = Math.min(TOTAL_FRAMES - 1, Math.floor(p * TOTAL_FRAMES));
+      const num = String(frameIndex + 1).padStart(3, '0');
+      heroScrollFrameEl.src = FRAME_PATH + num + '.' + FRAME_EXT;
+    }
+
+    function updateHeroScrollFrame() {
+      const scrollY = window.scrollY;
+      if (scrollY > 0) {
+        virtualScroll = ANIMATION_SCROLL_RANGE;
+        setFrameFromProgress(1);
+        return;
+      }
+      const progress = virtualScroll / ANIMATION_SCROLL_RANGE;
+      setFrameFromProgress(progress);
+    }
+
+    /* Wheel at top: first ANIMATION_SCROLL_RANGE only drives frames, no page scroll */
+    heroSection.addEventListener('wheel', (e) => {
+      if (window.scrollY > 0) return;
+      if (e.deltaY > 0) {
+        if (virtualScroll < ANIMATION_SCROLL_RANGE) {
+          e.preventDefault();
+          virtualScroll = Math.min(ANIMATION_SCROLL_RANGE, virtualScroll + Math.abs(e.deltaY));
+          updateHeroScrollFrame();
+        }
+      } else {
+        if (virtualScroll > 0) {
+          e.preventDefault();
+          virtualScroll = Math.max(0, virtualScroll - Math.abs(e.deltaY));
+          updateHeroScrollFrame();
+        }
+      }
+    }, { passive: false });
+
+    let heroTicking = false;
+    window.addEventListener('scroll', () => {
+      if (!heroTicking) {
+        requestAnimationFrame(() => {
+          if (window.scrollY === 0) {
+            virtualScroll = Math.min(virtualScroll, ANIMATION_SCROLL_RANGE);
+          } else {
+            virtualScroll = ANIMATION_SCROLL_RANGE;
+          }
+          updateHeroScrollFrame();
+          heroTicking = false;
+        });
+        heroTicking = true;
+      }
+    }, { passive: true });
+    updateHeroScrollFrame();
+  }
+
+  /**
+   * Parallax background: subtle move on scroll
+   */
+  const bgParallax = document.getElementById('bgParallax');
+  if (bgParallax) {
+    let ticking = false;
+    function updateBgParallax() {
+      const y = window.scrollY;
+      const rate = 0.15;
+      bgParallax.style.transform = `translateY(${y * rate}px)`;
+      ticking = false;
+    }
+    window.addEventListener('scroll', () => {
+      if (!ticking) {
+        requestAnimationFrame(updateBgParallax);
+        ticking = true;
+      }
+    }, { passive: true });
+  }
+
+  /**
    * Scroll top button
    */
   const scrollTop = document.querySelector('.scroll-top');
@@ -143,6 +231,8 @@ document.addEventListener('DOMContentLoaded', () => {
         appContent.innerHTML = newContent.innerHTML;
         if (doc.title) document.title = doc.title;
         setActiveNav(href);
+        if (path.includes('interactive3d')) document.body.classList.add('page-interactive3d');
+        else document.body.classList.remove('page-interactive3d');
         window.scrollTo({ top: 0, behavior: 'smooth' });
         if (pushState) history.pushState({ path: href }, '', href);
         if (typeof AOS !== 'undefined') AOS.refresh();
