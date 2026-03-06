@@ -90,6 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const FRAME_PATH = 'assets/img/hero-scroll/frame_';
     /* Virtual scroll range: first N px of “scroll” only advance the sequence (no page scroll) */
     const ANIMATION_SCROLL_RANGE = 5000;
+    const SCROLL_SPEED_MULTIPLIER = 3; // 3x faster frame progression
     let virtualScroll = 0;
     var hasReachedEnd = false;
     var maxProgressReached = 0;
@@ -118,14 +119,16 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      if (scrollY >= scrollRange) {
+      const effectiveRange = scrollRange / SCROLL_SPEED_MULTIPLIER;
+
+      if (scrollY >= effectiveRange) {
         hasReachedEnd = true;
         maxProgressReached = 1;
         setFrameFromProgress(1);
         return;
       }
 
-      var progress = scrollY / scrollRange;
+      var progress = scrollY / effectiveRange;
       maxProgressReached = Math.max(maxProgressReached, progress);
       virtualScroll = ANIMATION_SCROLL_RANGE;
       setFrameFromProgress(maxProgressReached);
