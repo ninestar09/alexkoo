@@ -90,7 +90,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const FRAME_PATH = 'assets/img/hero-scroll/frame_';
     /* Virtual scroll range: first N px of “scroll” only advance the sequence (no page scroll) */
     const ANIMATION_SCROLL_RANGE = 5000;
-    const SCROLL_SPEED_MULTIPLIER = 3; // 3x faster frame progression
+    const SCROLL_SPEED_MULTIPLIER = 24; // 24x faster frame progression
     let virtualScroll = 0;
     var hasReachedEnd = false;
     var maxProgressReached = 0;
