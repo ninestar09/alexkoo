@@ -14,6 +14,7 @@
   --font-default: "Open Sans", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --font-primary: "Inter", sans-serif;
   --font-secondary: "Cardo", sans-serif;
+  --font-modern: "Plus Jakarta Sans", sans-serif;
 }
 
 /* Colors */
@@ -1580,12 +1581,50 @@ h6 {
   font-size: 18px;
 }
 
+/* Intro text between hero CTA and gallery – match hero black so no band */
+.hero-intro {
+  padding: 40px 0 50px 0;
+  background-color: #000;
+}
+
+.hero-intro-text {
+  font-family: var(--font-modern);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 18px;
+  font-weight: 400;
+  margin: 0;
+  max-width: 680px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.7;
+  letter-spacing: 0.01em;
+}
+
+.hero-intro-text .hero-intro-highlight {
+  color: #fff;
+  background: linear-gradient(to bottom, transparent 60%, rgba(50, 131, 207, 0.35) 60%);
+  padding: 0 2px;
+  font-weight: 600;
+}
+
+.hero-intro-text .hero-intro-em {
+  font-style: italic;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.hero-intro-text .hero-intro-lg {
+  font-size: 1.08em;
+  font-weight: 600;
+}
+
 /* Glass-style CTA – frosted / liquid glass (hero "Feel Free to reachout") */
 .hero .btn-get-started {
   font-family: var(--font-primary);
   font-weight: 500;
   font-size: 14px;
   display: inline-block;
+  margin-top: 100px;
   padding: 14px 44px;
   border-radius: 9999px;
   letter-spacing: 1px;
