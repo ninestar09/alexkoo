@@ -203,7 +203,7 @@ h6 {
 }
 
 /*--------------------------------------------------------------
-# Scroll top button
+# Scroll top button – glass style (matches site CTAs)
 --------------------------------------------------------------*/
 .scroll-top {
   position: fixed;
@@ -212,25 +212,36 @@ h6 {
   right: 15px;
   bottom: -15px;
   z-index: 99999;
-  background: var(--color-primary);
   width: 44px;
   height: 44px;
   border-radius: 50px;
-  transition: all 0.4s, transform 0.25s ease, box-shadow 0.25s ease;
-  box-shadow: 0 4px 12px rgba(161, 70, 197, 0.35);
+  transition: all 0.4s, transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+  color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .scroll-top i {
   font-size: 24px;
-  color: #fff;
+  color: inherit;
   line-height: 0;
 }
 
 .scroll-top:hover {
-  background: rgba(235, 185, 255, 0.9);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
+  border-color: rgba(255, 255, 255, 0.45);
   color: #fff;
   transform: translateY(-3px) scale(1.05);
-  box-shadow: 0 8px 20px rgba(161, 70, 197, 0.45);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.12),
+    0 8px 28px rgba(0, 0, 0, 0.3);
 }
 
 .scroll-top.active {
@@ -967,16 +978,135 @@ h6 {
 }
 
 /*--------------------------------------------------------------
-# Pricing Section
+# Gallery – gradient background (black → blue → purple), subtle hover glow
 --------------------------------------------------------------*/
 .gallery {
-  margin-top: 40px;
+  margin-top: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Smooth blend from hero-intro black: gradient overlaps intro and transitions very gradually to avoid a visible line */
+.gallery::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  top: -80px;
+  height: calc(100% + 80px);
+  z-index: 0;
+  background: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 25%,
+    #000 38%,
+    #010102 48%,
+    #020204 56%,
+    #030306 64%,
+    #050408 72%,
+    #070610 80%,
+    #090814 88%,
+    #0c0818 94%,
+    #0e0820 98%,
+    #100824 100%
+  );
+  pointer-events: none;
+}
+
+/* Subtle hover glow over the gradient */
+.gallery::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 40%,
+    rgba(100, 150, 255, 0.12) 0%,
+    rgba(80, 50, 140, 0.08) 40%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+.gallery:hover::after {
+  opacity: 1;
+}
+
+.gallery .container-fluid {
+  position: relative;
+  z-index: 1;
 }
 
 .gallery .gallery-item {
   position: relative;
   overflow: hidden;
   border-radius: 10px;
+  transition: box-shadow 0.4s ease;
+}
+
+.gallery .gallery-item:hover {
+  box-shadow: 0 0 32px rgba(100, 150, 255, 0.12), 0 0 64px rgba(80, 50, 140, 0.06);
+}
+
+/* Same gradient + hover effect on gallery single/list pages (page-header + gallery-single) */
+#main.main-gallery-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+#main.main-gallery-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 25%,
+    #000 38%,
+    #010102 48%,
+    #020204 56%,
+    #030306 64%,
+    #050408 72%,
+    #070610 80%,
+    #090814 88%,
+    #0c0818 94%,
+    #0e0820 98%,
+    #100824 100%
+  );
+  pointer-events: none;
+}
+
+#main.main-gallery-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: radial-gradient(
+    ellipse 80% 60% at 50% 40%,
+    rgba(100, 150, 255, 0.12) 0%,
+    rgba(80, 50, 140, 0.08) 40%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
+}
+
+#main.main-gallery-bg:hover::after {
+  opacity: 1;
+}
+
+#main.main-gallery-bg > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* On gallery pages, use only main gradient – hide section’s own gradient to avoid bands */
+#main.main-gallery-bg .gallery::before,
+#main.main-gallery-bg .gallery::after {
+  display: none;
 }
 
 .gallery .gallery-item img {
@@ -1123,23 +1253,36 @@ h6 {
   font-size: 14px;
 }
 
+/* Glass style – same as hero / page-header CTA */
 .gallery-single .portfolio-info .btn-visit {
-  padding: 8px 40px;
-  color: #fff;
-  border-radius: 50px;
+  font-family: var(--font-primary);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 10px 40px;
+  border-radius: 9999px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
   transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
-  background: rgba(161, 70, 197, 0.4);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 4px 16px rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .gallery-single .portfolio-info .btn-visit:hover {
-  background: rgba(161, 70, 197, 0.55);
-  border-color: rgba(255, 255, 255, 0.35);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
   transform: translateY(-2px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 6px 22px rgba(161, 70, 197, 0.35);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.12),
+    0 8px 28px rgba(0, 0, 0, 0.3);
 }
 
 .gallery-single .portfolio-description h2 {
@@ -1564,14 +1707,14 @@ h6 {
   display: inline-block;
 }
 
-.hero h2 span:before {
+.hero h2 span.hero-name:before {
   content: "";
   position: absolute;
   height: 50%;
   bottom: 0;
   left: 0;
   right: 0;
-  background: var(--color-primary);
+  background: rgba(50, 131, 207, 0.4);
   z-index: -1;
 }
 
@@ -1618,33 +1761,29 @@ h6 {
   font-weight: 600;
 }
 
-/* Glass-style CTA – frosted / liquid glass (hero "Feel Free to reachout") */
-.hero .btn-get-started {
+/* Glass-style CTA – frosted / liquid glass (hero, orion3d, and any .btn-get-started) */
+.btn-get-started {
   font-family: var(--font-primary);
   font-weight: 500;
   font-size: 14px;
   display: inline-block;
-  margin-top: 100px;
   padding: 14px 44px;
   border-radius: 9999px;
   letter-spacing: 1px;
   text-transform: uppercase;
   transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
   color: rgba(255, 255, 255, 0.95);
-  /* Frosted fill: subtle vertical gradient (lighter top, slightly darker bottom) */
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 100%);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  /* Reflective border – light silver, reads on dark */
   border: 1px solid rgba(255, 255, 255, 0.35);
-  /* Inner highlight top/left, inner shadow bottom/right, soft outer drop shadow */
   box-shadow:
     inset 1px 1px 0 rgba(255, 255, 255, 0.2),
     inset -1px -1px 0 rgba(0, 0, 0, 0.15),
     0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-.hero .btn-get-started:hover {
+.btn-get-started:hover {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
   border-color: rgba(255, 255, 255, 0.45);
   color: #fff;
@@ -1653,6 +1792,10 @@ h6 {
     inset 1px 1px 0 rgba(255, 255, 255, 0.25),
     inset -1px -1px 0 rgba(0, 0, 0, 0.12),
     0 8px 28px rgba(0, 0, 0, 0.3);
+}
+
+.hero .btn-get-started {
+  margin-top: 100px;
 }
 
 .back-to-interactive {
@@ -1667,11 +1810,17 @@ h6 {
   height: 36px;
   justify-content: center;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(10, 10, 10, 0.5);
-  color: rgba(255, 255, 255, 0.85);
   font-size: 18px;
-  transition: 0.3s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+  color: rgba(255, 255, 255, 0.95);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .back-to-interactive i {
@@ -1680,8 +1829,14 @@ h6 {
 }
 
 .back-to-interactive:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.12),
+    0 8px 28px rgba(0, 0, 0, 0.3);
 }
 
 .back-to-interactive.back-left {
@@ -1710,7 +1865,7 @@ h6 {
 }
 
 /*--------------------------------------------------------------
-# Interactive 3D Cards
+# Interactive 3D Cards – glass style (matches site CTAs)
 --------------------------------------------------------------*/
 .interactive-card {
   width: 220px;
@@ -1720,29 +1875,41 @@ h6 {
   align-items: center;
   gap: 12px;
   padding: 24px 20px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: 14px;
-  background: rgba(10, 10, 10, 0.4);
-  color: #fff;
+  color: rgba(255, 255, 255, 0.95);
   text-transform: uppercase;
   font-family: var(--font-primary);
   letter-spacing: 1px;
-  transition: 0.3s ease;
-  /* Subtle blur yellow / amber glow so warm tones show on this page */
-  box-shadow: 0 0 40px rgba(220, 180, 100, 0.12), 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.15),
+    0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
 .interactive-card:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
   transform: translateY(-2px);
-  box-shadow: 0 0 50px rgba(220, 180, 100, 0.2), 0 10px 20px rgba(50, 131, 207, 0.2);
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.12),
+    0 8px 28px rgba(0, 0, 0, 0.3);
 }
 
 .interactive-card.is-active {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  box-shadow: 0 12px 24px rgba(50, 131, 207, 0.25);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.12) 100%);
+  border-color: rgba(255, 255, 255, 0.45);
+  color: #fff;
+  box-shadow:
+    inset 1px 1px 0 rgba(255, 255, 255, 0.25),
+    inset -1px -1px 0 rgba(0, 0, 0, 0.12),
+    0 8px 28px rgba(0, 0, 0, 0.3);
 }
 
 .interactive-icon {
@@ -1848,13 +2015,21 @@ h6 {
 }
 
 /*--------------------------------------------------------------
-# Footer
+# Footer – continues gradient: deep purple → magenta (match first image)
 --------------------------------------------------------------*/
 .footer {
-  margin-top: 30px;
+  margin-top: 0;
   padding: 30px 0;
   font-size: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-top: none;
+  background: linear-gradient(
+    to bottom,
+    #100824 0%,
+    #080410 45%,
+    #030206 80%,
+    #000 100%
+  );
+  background-attachment: scroll;
 }
 
 .footer .copyright {
