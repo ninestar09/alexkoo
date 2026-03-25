@@ -72,7 +72,7 @@
   <div id="app-content">
   <!-- ======= Hero Section ======= -->
   <section id="hero" class="hero d-flex flex-column justify-content-center align-items-center" data-aos="fade"
-    data-aos-delay="1500">
+    data-aos-delay="500">
     <!-- Scroll-driven frame animation behind title (90 frames: assets/img/hero-scroll/frame_001.jpg … frame_090.jpg) -->
     <div class="hero-scroll-frames" aria-hidden="true">
       <img id="heroScrollFrame" src="assets/img/hero-scroll/frame_001.jpg" alt="">
@@ -87,98 +87,184 @@
     </div>
   </section><!-- End Hero Section -->
 
-  <main id="main" data-aos="fade" data-aos-delay="1500">
+  <main id="main">
 
     <!-- Intro text between hero CTA and gallery -->
-    <section class="hero-intro text-center">
+    <section class="hero-intro text-center" data-aos="fade-up" data-aos-duration="750" data-aos-delay="120">
       <div class="container">
         <p class="hero-intro-text"><span class="hero-intro-lg hero-intro-highlight">Award-winning</span> immersive 3D graphics and XR developer with <span class="hero-intro-highlight">15+ years</span> of entrepreneurial experience in <em class="hero-intro-em">Media &amp; Entertainment</em>. <em class="hero-intro-em">Dedicated</em> to advancing <span class="hero-intro-highlight hero-intro-lg">equitable HCI</span>, I actively research and design <span class="hero-intro-highlight">inclusive, accessible spatial UX</span> for users with <span class="hero-intro-highlight">physical disabilities</span>, ensuring <em class="hero-intro-em">emerging spatial environments</em> <span class="hero-intro-lg hero-intro-highlight">empower everyone</span>.</p>
       </div>
     </section>
 
     <!-- ======= Gallery Section ======= -->
-    <section id="gallery" class="gallery">
+    <section id="gallery" class="gallery" data-aos="fade-up" data-aos-duration="900" data-aos-delay="80">
+      <div class="gallery-ambient" aria-hidden="true">
+        <span class="gallery-ambient__wave gallery-ambient__wave--1"></span>
+        <span class="gallery-ambient__wave gallery-ambient__wave--2"></span>
+        <span class="gallery-ambient__lines gallery-ambient__lines--step"></span>
+        <span class="gallery-ambient__lines gallery-ambient__lines--offset"></span>
+      </div>
       <div class="container-fluid">
 
         <div class="row gy-4 justify-content-center">
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery13.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-n00.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-n00.jpg" class="img-fluid" alt="Experimental Projects">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">01</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">Experimental Projects</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery14.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-n11.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-n11.jpg" class="img-fluid" alt="RYZA">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">02</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">RYZA</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery15.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-n2.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-n2.jpg" class="img-fluid" alt="Comfyui Workflow for 3D">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">03</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">Comfyui Workflow for 3D</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery16.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-n3.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-n3.jpg" class="img-fluid" alt="Paramount CBS Studio 2025">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">04</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">Paramount CBS Studio 2025</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery01.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-1B.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-1B.jpg" class="img-fluid" alt="CBS ELECTION 2024/2022">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">05</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">CBS ELECTION 2024/2022</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery02.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-2.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-2.jpg" class="img-fluid" alt="nineblox">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">06</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">nineblox</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery03.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-33.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-33.jpg" class="img-fluid" alt="The Q">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">07</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">The Q</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery04.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-4.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-4.jpg" class="img-fluid" alt="PATENT">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">08</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">PATENT</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery05.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-5.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-5.jpg" class="img-fluid" alt="2020 ELECTION">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">09</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">2020 ELECTION</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery06.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-6.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-6.jpg" class="img-fluid" alt="CBS Projects">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">10</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">CBS Projects</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery07.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-7.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-7.jpg" class="img-fluid" alt="ABC ELECTION">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">11</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">ABC ELECTION</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery08.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-8.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-8.jpg" class="img-fluid" alt="ESPN">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">12</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">ESPN</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery09.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-9.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-9.jpg" class="img-fluid" alt="VIRTUAL VIEW">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">13</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">VIRTUAL VIEW</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery10.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-10.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-10.jpg" class="img-fluid" alt="ABC PROJECTS">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">14</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">ABC PROJECTS</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery11.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-11.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-11.jpg" class="img-fluid" alt="ALPHA BETA">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">15</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">ALPHA BETA</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
           <div class="col-xl-3 col-lg-4 col-md-6">
             <a href="gallery12.html" class="gallery-item h-100 d-block">
-              <img src="assets/img/gallery/gallery-12.jpg" class="img-fluid" alt="">
+              <img src="assets/img/gallery/gallery-12.jpg" class="img-fluid" alt="OTHER PROJECTS">
+              <span class="gallery-item__overlay" aria-hidden="true">
+                <span class="gallery-item__num">16</span>
+                <span class="gallery-item__line"></span>
+                <span class="gallery-item__title">OTHER PROJECTS</span>
+              </span>
             </a>
           </div><!-- End Gallery Item -->
 

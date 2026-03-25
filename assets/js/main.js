@@ -23,6 +23,107 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /**
+   * Page transition: glass L/R wings (see main.css). Used for:
+   * - SPA nav (index / about / contact / interactive3d): exit → fetch → enter
+   * - Full page (e.g. gallery → SPA): exit → navigate with ?navt → enter on load
+   */
+  const PAGE_TX_MS = 760;
+  let pageTxOverlay = null;
+
+  function ensurePageTransitionOverlay() {
+    if (pageTxOverlay) return pageTxOverlay;
+    let el = document.getElementById('pageLineTransition');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'pageLineTransition';
+      el.className = 'page-line-transition';
+      el.innerHTML = `
+        <div class="page-line-transition__wings" aria-hidden="true">
+          <div class="page-line-transition__wing page-line-transition__wing--left"></div>
+          <div class="page-line-transition__wing page-line-transition__wing--right"></div>
+        </div>
+      `;
+      document.body.appendChild(el);
+    }
+    pageTxOverlay = el;
+    return pageTxOverlay;
+  }
+
+  function pageTxClear() {
+    if (!pageTxOverlay) return;
+    pageTxOverlay.classList.remove('is-active', 'is-exiting', 'is-entering');
+  }
+
+  /** Run exit animation, then call `done` (e.g. fetch or full navigation). */
+  function pageTxExitThen(done) {
+    ensurePageTransitionOverlay();
+    pageTxClear();
+    pageTxOverlay.classList.add('is-active', 'is-exiting');
+    window.setTimeout(done, PAGE_TX_MS);
+  }
+
+  /** Play enter animation (e.g. after SPA content swap). */
+  function pageTxPlayEnter() {
+    ensurePageTransitionOverlay();
+    pageTxClear();
+    pageTxOverlay.classList.add('is-active', 'is-entering');
+    window.setTimeout(pageTxClear, PAGE_TX_MS + 40);
+  }
+
+  /** Full-page navigation with transition + ?navt for enter on next document. */
+  function pageTxNavigateFull(toUrl) {
+    ensurePageTransitionOverlay();
+    const u = new URL(toUrl.toString());
+    u.searchParams.set('navt', '1');
+    pageTxClear();
+    pageTxOverlay.classList.add('is-active', 'is-exiting');
+    window.setTimeout(() => {
+      window.location.href = u.toString();
+    }, PAGE_TX_MS);
+  }
+
+  function initPageLineTransition() {
+    ensurePageTransitionOverlay();
+
+    const urlNow = new URL(window.location.href);
+    if (urlNow.searchParams.get('navt')) {
+      urlNow.searchParams.delete('navt');
+      window.history.replaceState({}, '', urlNow.toString());
+      pageTxPlayEnter();
+    }
+
+    /* Pages without #app-content (e.g. gallery): full load to any SPA nav target with same transition */
+    document.addEventListener('click', (e) => {
+      if (e.defaultPrevented) return;
+      if (e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (document.getElementById('app-content')) return;
+
+      const target = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!target) return;
+      const href = target.getAttribute('href');
+      if (!href || href === '#' || href.startsWith('#')) return;
+      if (target.getAttribute('target') === '_blank') return;
+
+      const to = new URL(href, window.location.href);
+      if (to.origin !== window.location.origin) return;
+
+      const path = getPath(to.pathname);
+      if (!isSpaPage(path)) return;
+
+      const destName = path.replace(/^.*\//, '') || 'index.html';
+      const curPath = getPath(window.location.pathname);
+      const curName = curPath.replace(/^.*\//, '') || 'index.html';
+      if (destName === curName) return;
+
+      e.preventDefault();
+      pageTxNavigateFull(to);
+    }, { capture: true, passive: false });
+  }
+
+  initPageLineTransition();
+
+  /**
    * Mobile nav toggle
    */
   const mobileNavShow = document.querySelector('.mobile-nav-show');
@@ -90,7 +191,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const FRAME_PATH = 'assets/img/hero-scroll/frame_';
     /* Virtual scroll range: first N px of “scroll” only advance the sequence (no page scroll) */
     const ANIMATION_SCROLL_RANGE = 5000;
-    const SCROLL_SPEED_MULTIPLIER = 24; // 24x faster frame progression
+    const FRAME_SCROLL_SPEED = 2; // 2× faster frame progression vs prior tuning
+    const SCROLL_SPEED_MULTIPLIER = 24 * FRAME_SCROLL_SPEED;
     let virtualScroll = 0;
     var hasReachedEnd = false;
     var maxProgressReached = 0;
@@ -137,16 +239,17 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Wheel at top: first ANIMATION_SCROLL_RANGE only drives frames, no page scroll */
     heroSection.addEventListener('wheel', (e) => {
       if (window.scrollY > 0) return;
+      const wheelStep = Math.abs(e.deltaY) * FRAME_SCROLL_SPEED;
       if (e.deltaY > 0) {
         if (virtualScroll < ANIMATION_SCROLL_RANGE) {
           e.preventDefault();
-          virtualScroll = Math.min(ANIMATION_SCROLL_RANGE, virtualScroll + Math.abs(e.deltaY));
+          virtualScroll = Math.min(ANIMATION_SCROLL_RANGE, virtualScroll + wheelStep);
           updateHeroScrollFrame();
         }
       } else {
         if (virtualScroll > 0) {
           e.preventDefault();
-          virtualScroll = Math.max(0, virtualScroll - Math.abs(e.deltaY));
+          virtualScroll = Math.max(0, virtualScroll - wheelStep);
           updateHeroScrollFrame();
         }
       }
@@ -214,6 +317,28 @@ document.addEventListener('DOMContentLoaded', () => {
   const appContent = document.getElementById('app-content');
   const SPA_PAGES = ['index.html', 'about.html', 'contact.html', 'interactive3d.html'];
 
+  /**
+   * Index gallery: light / line ambient animations run while section is in view
+   */
+  function initGalleryAmbientObserver() {
+    const gallerySection = document.querySelector('#gallery');
+    if (!gallerySection || !gallerySection.querySelector('.gallery-ambient')) return;
+    if (gallerySection._ambientIo) {
+      gallerySection._ambientIo.disconnect();
+      gallerySection._ambientIo = null;
+    }
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          gallerySection.classList.toggle('gallery--in-view', entry.isIntersecting);
+        });
+      },
+      { root: null, rootMargin: '0px 0px -5% 0px', threshold: [0, 0.06, 0.15] }
+    );
+    io.observe(gallerySection);
+    gallerySection._ambientIo = io;
+  }
+
   function getPath(href) {
     if (!href) return '';
     const path = href.split('?')[0].split('#')[0];
@@ -247,23 +372,37 @@ document.addEventListener('DOMContentLoaded', () => {
       window.location.href = href;
       return;
     }
-    fetch(url.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-      .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-      .then(html => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const newContent = doc.getElementById('app-content');
-        if (!newContent) { window.location.href = href; return; }
-        appContent.innerHTML = newContent.innerHTML;
-        if (doc.title) document.title = doc.title;
-        setActiveNav(href);
-        if (path.includes('interactive3d')) document.body.classList.add('page-interactive3d');
-        else document.body.classList.remove('page-interactive3d');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        if (pushState) history.pushState({ path: href }, '', href);
-        if (typeof AOS !== 'undefined') AOS.refresh();
-      })
-      .catch(() => { window.location.href = href; });
+
+    const doFetch = () => {
+      fetch(url.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+        .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const newContent = doc.getElementById('app-content');
+          if (!newContent) {
+            pageTxClear();
+            window.location.href = href;
+            return;
+          }
+          appContent.innerHTML = newContent.innerHTML;
+          if (doc.title) document.title = doc.title;
+          setActiveNav(href);
+          if (path.includes('interactive3d')) document.body.classList.add('page-interactive3d');
+          else document.body.classList.remove('page-interactive3d');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          if (pushState) history.pushState({ path: href }, '', href);
+          if (typeof AOS !== 'undefined') AOS.refresh();
+          initGalleryAmbientObserver();
+          pageTxPlayEnter();
+        })
+        .catch(() => {
+          pageTxClear();
+          window.location.href = href;
+        });
+    };
+
+    pageTxExitThen(doFetch);
   }
 
   if (appContent) {
@@ -273,6 +412,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!href || href.startsWith('#')) return;
         if (href.startsWith('http') && !href.includes(window.location.host)) return;
         if (!isSpaPage(getPath(href))) return;
+        const curName = getPath(window.location.pathname).replace(/^.*\//, '') || 'index.html';
+        const nextName = getPath(href).replace(/^.*\//, '') || 'index.html';
+        if (curName === nextName) return;
         e.preventDefault();
         this.classList.add('active');
         document.querySelectorAll('.navbar-pill a.active').forEach(a => { if (a !== this) a.classList.remove('active'); });
@@ -392,6 +534,8 @@ document.addEventListener('DOMContentLoaded', () => {
       mirror: false
     });
   }
+  initGalleryAmbientObserver();
+
   window.addEventListener('load', () => {
     aos_init();
   });
