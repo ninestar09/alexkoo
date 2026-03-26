@@ -15,10 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('load', () => {
       setTimeout(() => {
         preloader.classList.add('loaded');
-      }, 1000);
+      }, 100);
       setTimeout(() => {
         preloader.remove();
-      }, 2000);
+      }, 900);
     });
   }
 
@@ -527,6 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
    * Animation on scroll function and init
    */
   function aos_init() {
+    if (typeof AOS === 'undefined') return;
     AOS.init({
       duration: 1000,
       easing: 'ease-in-out',
@@ -536,8 +537,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   initGalleryAmbientObserver();
 
+  /* AOS early so inner pages can animate header → body; refresh after assets load */
+  aos_init();
   window.addEventListener('load', () => {
-    aos_init();
+    if (typeof AOS !== 'undefined') AOS.refresh();
   });
 
 });

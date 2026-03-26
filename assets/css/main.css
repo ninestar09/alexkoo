@@ -906,6 +906,10 @@ h6 {
   color: var(--color-primary);
 }
 
+.about .content p {
+  margin-bottom: 0;
+}
+
 .about .content ul {
   list-style: none;
   padding: 0;
@@ -1365,8 +1369,10 @@ h6 {
   font-weight: 700;
   line-height: 0.92;
   letter-spacing: -0.04em;
-  color: rgba(255, 255, 255, 0.07);
-  text-shadow: 0 4px 28px rgba(80, 140, 255, 0.35);
+  color: rgba(255, 255, 255, 0.8);
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.65),
+    0 4px 28px rgba(80, 140, 255, 0.35);
   transform: translate3d(-12px, 26px, 0) skewX(-10deg) scale(0.86);
   opacity: 0;
   transition:
