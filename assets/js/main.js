@@ -318,6 +318,34 @@ document.addEventListener('DOMContentLoaded', () => {
   const SPA_PAGES = ['index.html', 'about.html', 'contact.html', 'interactive3d.html'];
 
   /**
+   * About page: .fade-up sections (inline script does not run after SPA innerHTML swap)
+   */
+  function initAboutFadeUpObserver() {
+    const nodes = document.querySelectorAll("#aboutPageInner .fade-up");
+    if (!nodes.length) return;
+    if (window._aboutFadeIo) {
+      window._aboutFadeIo.disconnect();
+      window._aboutFadeIo = null;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) entry.target.classList.add("visible");
+        });
+      },
+      { threshold: 0.1, rootMargin: "0px 0px 10% 0px" }
+    );
+    nodes.forEach((el) => {
+      observer.observe(el);
+      const r = el.getBoundingClientRect();
+      if (r.top < window.innerHeight * 0.92 && r.bottom > 32) {
+        el.classList.add("visible");
+      }
+    });
+    window._aboutFadeIo = observer;
+  }
+
+  /**
    * Index gallery: light / line ambient animations run while section is in view
    */
   function initGalleryAmbientObserver() {
@@ -394,6 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (pushState) history.pushState({ path: href }, '', href);
           if (typeof AOS !== 'undefined') AOS.refresh();
           initGalleryAmbientObserver();
+          initAboutFadeUpObserver();
           pageTxPlayEnter();
         })
         .catch(() => {
@@ -536,6 +565,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
   initGalleryAmbientObserver();
+  initAboutFadeUpObserver();
 
   /* AOS early so inner pages can animate header → body; refresh after assets load */
   aos_init();
