@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin Dashboard | Alex Koo</title>
+<link href="assets/img/favicon.png" rel="icon">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+  :root {
+    --bg: #0a0e14;
+    --bg-elev: #11161f;
+    --bg-card: #151b26;
+    --border: rgba(255,255,255,0.08);
+    --border-strong: rgba(255,255,255,0.14);
+    --text: #ffffff;
+    --text-muted: #8a93a3;
+    --text-dim: #5a6373;
+    --accent: #6ec5d4;
+    --accent-2: #a78bfa;
+    --green: #4ade80;
+    --red: #f87171;
+    --yellow: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+  }
+  a { color: inherit; text-decoration: none; }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  /* ============ LOCK SCREEN ============ */
+  #lock {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 9999;
+  }
+  #lock.hidden { display: none; }
+  .lock-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 50px 44px;
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .lock-icon {
+    width: 60px; height: 60px;
+    background: rgba(110,197,212,0.12);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 24px;
+    color: var(--accent);
+    font-size: 26px;
+  }
+  .lock-card h2 { font-size: 22px; margin-bottom: 8px; }
+  .lock-card p { color: var(--text-muted); margin-bottom: 28px; font-size: 13px; }
+  .lock-card input {
+    width: 100%;
+    padding: 14px 18px;
+    background: var(--bg);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    margin-bottom: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .lock-card input:focus { border-color: var(--accent); }
+  .lock-card button {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #0a0e14;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+  .lock-card button:hover { background: #5db8c9; }
+  #lockError { color: var(--red); font-size: 12px; margin-top: 12px; min-height: 16px; }
+
+  /* ============ LAYOUT ============ */
+  .app { display: flex; min-height: 100vh; }
+
+  .sidebar {
+    width: 240px;
+    background: var(--bg-elev);
+    border-right: 1px solid var(--border);
+    padding: 28px 18px;
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .sb-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px 28px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 18px;
+  }
+  .sb-brand .logo {
+    width: 34px; height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 800;
+    color: #0a0e14;
+  }
+  .sb-brand .txt { font-weight: 700; font-size: 15px; }
+  .sb-brand .txt small { display: block; color: var(--text-dim); font-weight: 500; font-size: 11px; }
+
+  .sb-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 16px 10px 8px;
+  }
+  .sb-nav a {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    transition: all 0.2s;
+  }
+  .sb-nav a:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+  .sb-nav a.active { background: rgba(110,197,212,0.12); color: var(--accent); }
+  .sb-nav a i { font-size: 16px; }
+
+  .sb-foot {
+    margin-top: auto;
+    padding: 16px 10px 0;
+    border-top: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+  .sb-foot .user {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 0;
+  }
+  .sb-foot .avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    object-fit: cover;
+  }
+
+  .main {
+    margin-left: 240px;
+    flex: 1;
+    padding: 32px 40px 60px;
+  }
+
+  /* ============ HEADER ============ */
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 32px;
+  }
+  .head h1 {
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+  .head p { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
+
+  .range {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 4px;
+    border-radius: 10px;
+  }
+  .range button {
+    padding: 8px 14px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+  }
+  .range button:hover { color: var(--text); }
+  .range button.active { background: rgba(110,197,212,0.14); color: var(--accent); }
+
+  /* ============ STAT CARDS ============ */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 18px;
+    margin-bottom: 28px;
+  }
+  .stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .stat::before {
+    content: "";
+    position: absolute;
+    top: 0; right: 0;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(110,197,212,0.08), transparent 70%);
+  }
+  .stat .lbl {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 14px;
+  }
+  .stat .lbl i { color: var(--accent); font-size: 16px; }
+  .stat .val {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .stat .delta {
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .delta.up { color: var(--green); }
+  .delta.down { color: var(--red); }
+
+  /* ============ CARDS ============ */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .card-head h3 {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .card-head .sub { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
+  .card-head a { font-size: 12px; color: var(--accent); }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+    margin-bottom: 18px;
+  }
+  .grid-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px;
+  }
+
+  /* ============ CHART ============ */
+  .chart-wrap { height: 280px; position: relative; }
+
+  /* ============ LIST / TABLE ============ */
+  .list { display: flex; flex-direction: column; gap: 14px; }
+  .list-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .list-row:last-child { border-bottom: none; }
+  .list-row .label {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .list-row .label small { display: block; color: var(--text-dim); font-size: 11px; }
+  .list-row .bar {
+    width: 120px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .list-row .bar span {
+    display: block;
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    border-radius: 999px;
+  }
+  .list-row .count {
+    font-weight: 600;
+    font-size: 13px;
+    min-width: 50px;
+    text-align: right;
+  }
+  .list-row .flag {
+    width: 26px; height: 18px;
+    border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    background: var(--bg);
+  }
+
+  /* ============ BANNER ============ */
+  .banner {
+    background: linear-gradient(90deg, rgba(110,197,212,0.08), rgba(167,139,250,0.06));
+    border: 1px solid rgba(110,197,212,0.2);
+    border-radius: 14px;
+    padding: 16px 22px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .banner i { color: var(--accent); font-size: 18px; }
+  .banner strong { color: var(--text); }
+  .banner a { color: var(--accent); text-decoration: underline; }
+
+  /* ============ RESPONSIVE ============ */
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 24px 18px 40px; }
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+
+<body>
+
+<!-- ============ LOCK SCREEN ============ -->
+<div id="lock">
+  <form class="lock-card" onsubmit="return tryUnlock(event)">
+    <div class="lock-icon"><i class="bi bi-shield-lock"></i></div>
+    <h2>Admin Access</h2>
+    <p>Enter the passcode to view the dashboard</p>
+    <input type="password" id="lockInput" placeholder="Passcode" autofocus autocomplete="off">
+    <button type="submit">Unlock</button>
+    <div id="lockError"></div>
+  </form>
+</div>
+
+<!-- ============ APP ============ -->
+<div class="app">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="sb-brand">
+      <div class="logo">A</div>
+      <div class="txt">Alex Koo<small>Admin Panel</small></div>
+    </div>
+
+    <div class="sb-label">Analytics</div>
+    <nav class="sb-nav">
+      <a href="#" class="active"><i class="bi bi-grid-1x2"></i> Overview</a>
+      <a href="#pages"><i class="bi bi-file-earmark-text"></i> Top Pages</a>
+      <a href="#refs"><i class="bi bi-share"></i> Referrers</a>
+      <a href="#geo"><i class="bi bi-globe2"></i> Geography</a>
+    </nav>
+
+    <div class="sb-label">Site</div>
+    <nav class="sb-nav">
+      <a href="index.html"><i class="bi bi-house"></i> Home</a>
+      <a href="about.html"><i class="bi bi-person"></i> About</a>
+      <a href="https://github.com/ninestar09/alexkoo" target="_blank"><i class="bi bi-github"></i> Repository</a>
+      <a href="#" onclick="lock();return false;"><i class="bi bi-box-arrow-right"></i> Lock</a>
+    </nav>
+
+    <div class="sb-foot">
+      <div class="user">
+        <img src="assets/img/profile-img.jpg" class="avatar" alt="">
+        <div>
+          <div style="color:var(--text);font-weight:600;">Alex Koo</div>
+          <div class="mono" style="font-size:10px;">v1.0 · demo</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <main class="main">
+
+    <div class="head">
+      <div>
+        <h1>Dashboard Overview</h1>
+        <p id="rangeLabel">Last 30 days</p>
+      </div>
+      <div class="range">
+        <button data-range="7">7d</button>
+        <button data-range="30" class="active">30d</button>
+        <button data-range="90">90d</button>
+      </div>
+    </div>
+
+    <!-- Banner -->
+    <div class="banner">
+      <i class="bi bi-info-circle"></i>
+      <div>
+        <strong>Demo data mode.</strong> This dashboard is showing simulated traffic. To track real visitors for free, add Google Analytics 4 — see the instructions inside <span class="mono" style="color:var(--accent)">admin.html</span> near the bottom of the file.
+      </div>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="stats">
+      <div class="stat">
+        <div class="lbl"><i class="bi bi-people"></i> Unique Visitors</div>
+        <div class="val" id="statVisitors">—</div>
+        <div class="delta up"><i class="bi bi-arrow-up-short"></i> <span id="deltaVisitors">—</span> vs. prev period</div>
+      </div>
+      <div class="stat">
+        <div class="lbl"><i class="bi bi-eye"></i> Page Views</div>
+        <div class="val" id="statViews">—</div>
+        <div class="delta up"><i class="bi bi-arrow-up-short"></i> <span id="deltaViews">—</span> vs. prev period</div>
+      </div>
+      <div class="stat">
+        <div class="lbl"><i class="bi bi-clock"></i> Avg. Session</div>
+        <div class="val" id="statSession">—</div>
+        <div class="delta up"><i class="bi bi-arrow-up-short"></i> <span id="deltaSession">—</span> vs. prev period</div>
+      </div>
+      <div class="stat">
+        <div class="lbl"><i class="bi bi-box-arrow-up-right"></i> Bounce Rate</div>
+        <div class="val" id="statBounce">—</div>
+        <div class="delta down"><i class="bi bi-arrow-down-short"></i> <span id="deltaBounce">—</span> improvement</div>
+      </div>
+    </div>
+
+    <!-- Traffic chart + Top pages -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Traffic Overview</h3>
+            <div class="sub">Visitors and pageviews over time</div>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="trafficChart"></canvas></div>
+      </div>
+
+      <div class="card" id="pages">
+        <div class="card-head">
+          <div>
+            <h3>Top Pages</h3>
+            <div class="sub">Most visited</div>
+          </div>
+        </div>
+        <div class="list" id="topPagesList"></div>
+      </div>
+    </div>
+
+    <!-- Referrers + Geo + Devices -->
+    <div class="grid-3">
+      <div class="card" id="refs">
+        <div class="card-head">
+          <div>
+            <h3>Top Referrers</h3>
+            <div class="sub">Where visitors come from</div>
+          </div>
+        </div>
+        <div class="list" id="refList"></div>
+      </div>
+
+      <div class="card" id="geo">
+        <div class="card-head">
+          <div>
+            <h3>Geography</h3>
+            <div class="sub">Top countries</div>
+          </div>
+        </div>
+        <div class="list" id="geoList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3>Devices</h3>
+            <div class="sub">Visitor breakdown</div>
+          </div>
+        </div>
+        <div class="chart-wrap" style="height:220px;"><canvas id="deviceChart"></canvas></div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* =============================================================
+   PASSCODE PROTECTION
+   Change PASSCODE below to set your own password.
+   Note: this is a client-side lock for a static site — it's
+   security-by-obscurity. Don't use it for truly sensitive data.
+   ============================================================= */
+const PASSCODE = "koo2026";
+
+function tryUnlock(e) {
+  e.preventDefault();
+  const val = document.getElementById('lockInput').value;
+  if (val === PASSCODE) {
+    sessionStorage.setItem('adminUnlocked', '1');
+    document.getElementById('lock').classList.add('hidden');
+    initDashboard();
+  } else {
+    document.getElementById('lockError').textContent = 'Incorrect passcode';
+    document.getElementById('lockInput').value = '';
+  }
+  return false;
+}
+function lock() {
+  sessionStorage.removeItem('adminUnlocked');
+  location.reload();
+}
+if (sessionStorage.getItem('adminUnlocked') === '1') {
+  document.getElementById('lock').classList.add('hidden');
+  window.addEventListener('DOMContentLoaded', initDashboard);
+}
+
+/* =============================================================
+   DEMO DATA GENERATOR
+   Replace these functions with real GA4 API calls when ready.
+   ============================================================= */
+function genDemoData(days) {
+  const series = [];
+  const labels = [];
+  const today = new Date();
+  let base = 80 + Math.random() * 40;
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today); d.setDate(d.getDate() - i);
+    labels.push(d.toLocaleDateString('en', { month: 'short', day: 'numeric' }));
+    // weekend dip
+    const dow = d.getDay();
+    const weekend = (dow === 0 || dow === 6) ? 0.7 : 1;
+    base += (Math.random() - 0.45) * 12;
+    base = Math.max(40, base);
+    const visitors = Math.round(base * weekend * (0.9 + Math.random() * 0.2));
+    const views = Math.round(visitors * (1.6 + Math.random() * 0.6));
+    series.push({ visitors, views });
+  }
+  return { labels, series };
+}
+
+function fmt(n) {
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return n.toString();
+}
+
+/* =============================================================
+   DASHBOARD
+   ============================================================= */
+let trafficChart, deviceChart;
+let currentRange = 30;
+
+const topPages = [
+  { path: '/about.html', title: 'About', views: 1842, pct: 100 },
+  { path: '/', title: 'Home', views: 1506, pct: 82 },
+  { path: '/interactive3d.html', title: 'Interactive 3D', views: 894, pct: 48 },
+  { path: '/contact.html', title: 'Contact', views: 312, pct: 17 },
+  { path: '/portfolio/ryza', title: 'RYZA Case Study', views: 204, pct: 11 }
+];
+const referrers = [
+  { src: 'Direct / None', views: 842, pct: 100, icon: 'bi-link-45deg' },
+  { src: 'google.com', views: 631, pct: 75, icon: 'bi-google' },
+  { src: 'linkedin.com', views: 408, pct: 48, icon: 'bi-linkedin' },
+  { src: 'twitter.com', views: 186, pct: 22, icon: 'bi-twitter' },
+  { src: 'behance.net', views: 94, pct: 11, icon: 'bi-palette' }
+];
+const countries = [
+  { name: 'United States', flag: '🇺🇸', views: 1204, pct: 100 },
+  { name: 'United Kingdom', flag: '🇬🇧', views: 486, pct: 40 },
+  { name: 'South Korea', flag: '🇰🇷', views: 392, pct: 33 },
+  { name: 'Canada', flag: '🇨🇦', views: 228, pct: 19 },
+  { name: 'Germany', flag: '🇩🇪', views: 174, pct: 14 },
+  { name: 'Japan', flag: '🇯🇵', views: 132, pct: 11 }
+];
+
+function renderList(id, items, valKey = 'views') {
+  const el = document.getElementById(id);
+  el.innerHTML = items.map(it => `
+    <div class="list-row">
+      ${it.flag ? `<div class="flag">${it.flag}</div>` : `<i class="bi ${it.icon || 'bi-dot'}" style="color:var(--text-muted);font-size:16px;"></i>`}
+      <div class="label">${it.name || it.title || it.src}${it.path ? `<small>${it.path}</small>` : ''}</div>
+      <div class="bar"><span style="width:${it.pct}%;"></span></div>
+      <div class="count">${fmt(it[valKey])}</div>
+    </div>
+  `).join('');
+}
+
+function renderStats(days) {
+  const data = genDemoData(days);
+  const totalVisitors = data.series.reduce((s, d) => s + d.visitors, 0);
+  const totalViews = data.series.reduce((s, d) => s + d.views, 0);
+
+  document.getElementById('statVisitors').textContent = fmt(totalVisitors);
+  document.getElementById('statViews').textContent = fmt(totalViews);
+  document.getElementById('statSession').textContent = '2m 47s';
+  document.getElementById('statBounce').textContent = '38.2%';
+
+  document.getElementById('deltaVisitors').textContent = '+12.4%';
+  document.getElementById('deltaViews').textContent = '+8.7%';
+  document.getElementById('deltaSession').textContent = '+4.2%';
+  document.getElementById('deltaBounce').textContent = '−3.1%';
+
+  // Traffic chart
+  if (trafficChart) trafficChart.destroy();
+  const ctx = document.getElementById('trafficChart').getContext('2d');
+  const grad1 = ctx.createLinearGradient(0, 0, 0, 280);
+  grad1.addColorStop(0, 'rgba(110,197,212,0.35)');
+  grad1.addColorStop(1, 'rgba(110,197,212,0)');
+  const grad2 = ctx.createLinearGradient(0, 0, 0, 280);
+  grad2.addColorStop(0, 'rgba(167,139,250,0.25)');
+  grad2.addColorStop(1, 'rgba(167,139,250,0)');
+
+  trafficChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: data.labels,
+      datasets: [
+        {
+          label: 'Page Views',
+          data: data.series.map(d => d.views),
+          borderColor: '#a78bfa',
+          backgroundColor: grad2,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          borderWidth: 2
+        },
+        {
+          label: 'Visitors',
+          data: data.series.map(d => d.visitors),
+          borderColor: '#6ec5d4',
+          backgroundColor: grad1,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          borderWidth: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'top',
+          align: 'end',
+          labels: { color: '#8a93a3', boxWidth: 10, font: { size: 11 } }
+        },
+        tooltip: {
+          backgroundColor: '#151b26',
+          borderColor: 'rgba(255,255,255,0.14)',
+          borderWidth: 1,
+          padding: 12,
+          titleColor: '#fff',
+          bodyColor: '#8a93a3'
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { color: '#5a6373', font: { size: 10 }, maxTicksLimit: 10 }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#5a6373', font: { size: 10 } }
+        }
+      }
+    }
+  });
+}
+
+function renderDeviceChart() {
+  if (deviceChart) deviceChart.destroy();
+  const ctx = document.getElementById('deviceChart').getContext('2d');
+  deviceChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Desktop', 'Mobile', 'Tablet'],
+      datasets: [{
+        data: [62, 31, 7],
+        backgroundColor: ['#6ec5d4', '#a78bfa', '#fbbf24'],
+        borderColor: '#151b26',
+        borderWidth: 3
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '65%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: '#8a93a3', boxWidth: 10, font: { size: 11 }, padding: 14 }
+        }
+      }
+    }
+  });
+}
+
+function initDashboard() {
+  renderStats(currentRange);
+  renderList('topPagesList', topPages);
+  renderList('refList', referrers);
+  renderList('geoList', countries);
+  renderDeviceChart();
+
+  document.querySelectorAll('.range button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.range button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentRange = parseInt(btn.dataset.range);
+      document.getElementById('rangeLabel').textContent = `Last ${currentRange} days`;
+      renderStats(currentRange);
+    });
+  });
+}
+
+/* =============================================================
+   HOW TO CONNECT REAL GOOGLE ANALYTICS 4 (FREE)
+   =============================================================
+
+   STEP 1 — CREATE GA4 PROPERTY
+   1. Go to https://analytics.google.com
+   2. Sign in with a Google account
+   3. Create a new Property for your site (pick "Web")
+   4. Copy your Measurement ID (looks like: G-XXXXXXXXXX)
+
+   STEP 2 — ADD TRACKING SNIPPET TO EVERY PAGE
+   Paste this in the <head> of index.html, about.html, etc.
+   Replace G-XXXXXXXXXX with your real Measurement ID:
+
+   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></s<!-- -->cript>
+   <script>
+     window.dataLayer = window.dataLayer || [];
+     function gtag(){dataLayer.push(arguments);}
+     gtag('js', new Date());
+     gtag('config', 'G-XXXXXXXXXX');
+   </s<!-- -->cript>
+
+   STEP 3 — VIEW YOUR STATS
+   Wait 24-48 hours for data to accumulate, then view it at:
+   https://analytics.google.com
+
+   STEP 4 (OPTIONAL) — WIRE REAL DATA INTO THIS DASHBOARD
+   To pull GA4 data into this admin page directly, you'd need
+   the GA4 Data API. That requires a backend or serverless
+   function (Cloudflare Worker, Vercel Function, etc.) because
+   the API needs a service account key that can't be exposed
+   in browser JavaScript. Easiest alternative: just use
+   analytics.google.com directly for real data, and keep
+   this dashboard for visual quick-glance demos.
+
+   FREE ALTERNATIVE: CLOUDFLARE WEB ANALYTICS
+   1. Sign up (free) at https://www.cloudflare.com/web-analytics
+   2. Add your site
+   3. Paste the provided snippet into your pages
+   4. View real stats on Cloudflare's dashboard
+   ============================================================= */
+</script>
+
+</body>
+</html>
