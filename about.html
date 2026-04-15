@@ -29,7 +29,7 @@
 
   <link href="assets/css/main.css" rel="stylesheet">
 
-  <style>
+  <style id="aboutPageStyles">
     /* About page layout (original structure). Colors / tone = main site (#3283cf, dark bg, Cardo headlines). */
     #aboutPageInner {
       --about-bg: #0a0a12;
@@ -189,13 +189,14 @@
 
     .hero-greet {
       font-size: 22px;
-      font-weight: 600;
+      font-weight: 300;
       margin-bottom: 4px;
-      font-family: var(--font-primary);
+      font-family: var(--font-header);
     }
 
     .hero-role {
       font-size: 12px;
+      font-weight: 500;
       letter-spacing: 2.5px;
       color: var(--about-text-muted);
       text-transform: uppercase;
@@ -204,9 +205,9 @@
     }
 
     .hero-headline {
-      font-family: var(--font-secondary);
+      font-family: var(--font-header);
       font-size: clamp(36px, 5.2vw, 68px);
-      font-weight: 700;
+      font-weight: 400;
       line-height: 1.08;
       letter-spacing: -0.02em;
       margin-bottom: 28px;
@@ -215,8 +216,31 @@
       word-break: break-word;
     }
 
+    .hero-headline-wt {
+      font-weight: 300;
+    }
+
+    .hero-headline-reg {
+      font-weight: 400;
+    }
+
+    .hero-headline-bd {
+      font-weight: 700;
+    }
+
     .hero-headline .accent {
-      color: var(--about-accent);
+      font-weight: 700;
+      background-image: linear-gradient(
+        to right,
+        #a8d4ff 0%,
+        #5ba8ea 38%,
+        var(--about-accent) 62%,
+        #1a5fa8 100%
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
     }
 
     .hero-sub {
@@ -275,7 +299,7 @@
     }
 
     .intro-headline {
-      font-family: var(--font-secondary);
+      font-family: var(--font-header);
       font-size: clamp(28px, 3vw, 42px);
       font-weight: 700;
       line-height: 1.25;
@@ -366,7 +390,7 @@
     }
 
     .what-left h2 {
-      font-family: var(--font-secondary);
+      font-family: var(--font-header);
       font-size: clamp(48px, 6vw, 88px);
       font-weight: 700;
       letter-spacing: -0.02em;
@@ -398,7 +422,7 @@
       font-size: 24px;
       font-weight: 600;
       margin-bottom: 14px;
-      font-family: var(--font-primary);
+      font-family: var(--font-header);
       color: #fff;
     }
 
@@ -440,7 +464,7 @@
     }
 
     .philosophy-head h2 {
-      font-family: var(--font-secondary);
+      font-family: var(--font-header);
       font-size: clamp(40px, 5vw, 72px);
       font-weight: 700;
       letter-spacing: -0.02em;
@@ -492,7 +516,7 @@
       font-size: 24px;
       font-weight: 700;
       margin-bottom: 14px;
-      font-family: var(--font-primary);
+      font-family: var(--font-header);
       color: var(--about-light-text);
     }
 
@@ -526,7 +550,7 @@
 
     .cta-section h2 {
       position: relative;
-      font-family: var(--font-secondary);
+      font-family: var(--font-header);
       font-size: clamp(40px, 5vw, 72px);
       font-weight: 700;
       letter-spacing: -0.02em;
@@ -594,7 +618,7 @@
   </style>
 </head>
 
-<body>
+<body class="page-about">
   <div class="bg-parallax" id="bgParallax" aria-hidden="true"></div>
 
   <header id="header" class="header d-flex align-items-center fixed-top">
@@ -646,7 +670,7 @@
             <img src="assets/img/profile-img.jpg" alt="Alex Koo" class="avatar" width="110" height="110">
             <div class="hero-greet">Hello, I'm Alex Koo</div>
             <div class="hero-role">3D Artist · Creative Technologist · Educator</div>
-            <h1 class="hero-headline">Crafting <span class="accent">Immersive Experiences</span> Where Technology Serves the Story</h1>
+            <h1 class="hero-headline"><span class="hero-headline-wt">Crafting</span> <span class="accent">Immersive Experiences</span> <span class="hero-headline-wt">Where</span> <span class="hero-headline-reg">Technology Serves</span> <span class="hero-headline-bd">the Story</span></h1>
             <p class="hero-sub">Award-winning 3D artist and XR developer with 15+ years bridging real-time 3D, generative AI, and human storytelling — at CBS News, NYU, and beyond.</p>
             <div class="hero-cta">
               <a href="contact.html" class="btn-get-started">Feel Free to reachout</a>

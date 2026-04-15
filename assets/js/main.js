@@ -182,10 +182,27 @@ document.addEventListener('DOMContentLoaded', () => {
   /**
    * Hero scroll-driven frame animation (90 frames, 16:9).
    * First ~50 scroll units don’t move the page – they only drive the sequence; then page scrolls.
+   * Must be re-inited after SPA swaps #app-content (old window listeners targeted removed nodes).
    */
-  const heroScrollFrameEl = document.getElementById('heroScrollFrame');
-  const heroSection = document.getElementById('hero');
-  if (heroScrollFrameEl && heroSection) {
+  let heroScrollAbort = null;
+
+  function disposeHeroScrollFrames() {
+    if (heroScrollAbort) {
+      heroScrollAbort.abort();
+      heroScrollAbort = null;
+    }
+  }
+
+  function initHeroScrollFrames() {
+    disposeHeroScrollFrames();
+
+    const heroScrollFrameEl = document.getElementById('heroScrollFrame');
+    const heroSection = document.getElementById('hero');
+    if (!heroScrollFrameEl || !heroSection) return;
+
+    heroScrollAbort = new AbortController();
+    const signal = heroScrollAbort.signal;
+
     const TOTAL_FRAMES = 90;
     const FRAME_EXT = 'jpg'; // or 'png'
     const FRAME_PATH = 'assets/img/hero-scroll/frame_';
@@ -194,14 +211,31 @@ document.addEventListener('DOMContentLoaded', () => {
     const FRAME_SCROLL_SPEED = 2; // 2× faster frame progression vs prior tuning
     const SCROLL_SPEED_MULTIPLIER = 24 * FRAME_SCROLL_SPEED;
     let virtualScroll = 0;
-    var hasReachedEnd = false;
-    var maxProgressReached = 0;
+    let hasReachedEnd = false;
+    let maxProgressReached = 0;
+
+    function updateHeroTitleGradient(progress) {
+      const p = Math.min(1, Math.max(0, progress));
+      const angle = 88 + (p * 42);
+      const warmStop = 34 - (p * 32);
+      const midStop = 62 - (p * 46);
+      const warm = `hsl(${26 + (p * 186)} 96% ${71 - (p * 11)}%)`;
+      const mid = `hsl(${334 - (p * 122)} 88% ${68 - (p * 8)}%)`;
+      const cool = `hsl(${198 + (p * 18)} 94% ${66 - (p * 6)}%)`;
+      heroSection.style.setProperty('--hero-title-gradient-angle', `${angle.toFixed(1)}deg`);
+      heroSection.style.setProperty('--hero-title-warm-stop', `${warmStop.toFixed(1)}%`);
+      heroSection.style.setProperty('--hero-title-mid-stop', `${midStop.toFixed(1)}%`);
+      heroSection.style.setProperty('--hero-title-warm', warm);
+      heroSection.style.setProperty('--hero-title-mid', mid);
+      heroSection.style.setProperty('--hero-title-cool', cool);
+    }
 
     function setFrameFromProgress(progress) {
       const p = Math.min(1, Math.max(0, progress));
       const frameIndex = Math.min(TOTAL_FRAMES - 1, Math.floor(p * TOTAL_FRAMES));
       const num = String(frameIndex + 1).padStart(3, '0');
       heroScrollFrameEl.src = FRAME_PATH + num + '.' + FRAME_EXT;
+      updateHeroTitleGradient(p);
     }
 
     function updateHeroScrollFrame() {
@@ -230,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      var progress = scrollY / effectiveRange;
+      const progress = scrollY / effectiveRange;
       maxProgressReached = Math.max(maxProgressReached, progress);
       virtualScroll = ANIMATION_SCROLL_RANGE;
       setFrameFromProgress(maxProgressReached);
@@ -253,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
           updateHeroScrollFrame();
         }
       }
-    }, { passive: false });
+    }, { passive: false, signal });
 
     let heroTicking = false;
     window.addEventListener('scroll', () => {
@@ -269,11 +303,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         heroTicking = true;
       }
-    }, { passive: true });
+    }, { passive: true, signal });
 
-    window.addEventListener('resize', function() { updateHeroScrollFrame(); });
+    window.addEventListener('resize', function() { updateHeroScrollFrame(); }, { signal });
     updateHeroScrollFrame();
   }
+
+  initHeroScrollFrames();
 
   /**
    * Parallax background: subtle move on scroll
@@ -392,6 +428,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (active && window.positionPillIndicator) window.positionPillIndicator(active);
   }
 
+  /**
+   * SPA helper: bring page-scoped styles from fetched document head.
+   * Needed for about.html because SPA swaps #app-content only.
+   */
+  function syncPageScopedStyles(doc) {
+    const styleId = 'aboutPageStyles';
+    const incoming = doc.getElementById(styleId);
+    const existing = document.getElementById(styleId);
+
+    if (incoming) {
+      if (!existing || existing.textContent !== incoming.textContent) {
+        const clone = incoming.cloneNode(true);
+        clone.setAttribute('data-spa-managed', 'true');
+        if (existing) existing.replaceWith(clone);
+        else document.head.appendChild(clone);
+      }
+      return;
+    }
+
+    if (existing && existing.getAttribute('data-spa-managed') === 'true') {
+      existing.remove();
+    }
+  }
+
   function loadPage(href, pushState = true) {
     if (!appContent) return;
     const url = new URL(href, window.location.href);
@@ -413,14 +473,20 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = href;
             return;
           }
+          disposeHeroScrollFrames();
+          syncPageScopedStyles(doc);
           appContent.innerHTML = newContent.innerHTML;
           if (doc.title) document.title = doc.title;
           setActiveNav(href);
+          const pageBasename = path.replace(/^.*\//, '') || 'index.html';
           if (path.includes('interactive3d')) document.body.classList.add('page-interactive3d');
           else document.body.classList.remove('page-interactive3d');
+          if (pageBasename === 'about.html') document.body.classList.add('page-about');
+          else document.body.classList.remove('page-about');
           window.scrollTo({ top: 0, behavior: 'smooth' });
           if (pushState) history.pushState({ path: href }, '', href);
           if (typeof AOS !== 'undefined') AOS.refresh();
+          initHeroScrollFrames();
           initGalleryAmbientObserver();
           initAboutFadeUpObserver();
           pageTxPlayEnter();

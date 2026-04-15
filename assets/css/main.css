@@ -15,6 +15,21 @@
   --font-primary: "Inter", sans-serif;
   --font-secondary: "Cardo", sans-serif;
   --font-modern: "Plus Jakarta Sans", sans-serif;
+  /* Display / page titles + top bar (Mansory) — add WOFF2 under assets/fonts/ (licensed) */
+  --font-header: "Mansory", var(--font-primary), system-ui, sans-serif;
+}
+
+/* Mansory (Larin Type Co.) — place mansory-regular.woff2 / .woff in assets/fonts/ after purchase */
+@font-face {
+  font-family: "Mansory";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src:
+    local("Mansory Regular"),
+    local("Mansory"),
+    url("../fonts/mansory-regular.woff2") format("woff2"),
+    url("../fonts/mansory-regular.woff") format("woff");
 }
 
 /* Colors */
@@ -22,6 +37,9 @@
   --color-default: #fafafa;
   --color-primary: #3283cf;
   --color-secondary: #161718;
+  --color-body-bg: #0a0a12;
+  /* Pill nav track (see .navbar-pill ul) */
+  --nav-pill-track-bg: rgba(30, 30, 40, 0.45);
 }
 
 /* Smooth scroll behavior */
@@ -39,7 +57,7 @@ html {
 body {
   font-family: var(--font-default);
   color: var(--color-default);
-  background-color: #0a0a12;
+  background-color: var(--color-body-bg);
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
@@ -162,7 +180,7 @@ h6 {
   margin: 0;
   font-size: 36px;
   font-weight: 700;
-  font-family: var(--font-secondary);
+  font-family: var(--font-header);
   color: #fff;
 }
 
@@ -179,7 +197,7 @@ h6 {
   font-size: 56px;
   font-weight: 500;
   color: #fff;
-  font-family: var(--font-secondary);
+  font-family: var(--font-header);
 }
 
 @media (max-width: 768px) {
@@ -447,22 +465,15 @@ h6 {
   position: relative;
 }
 
-/* Fade below fixed header — blends into body / parallax (avoids a hard black line) */
-.header::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 100%;
-  height: 120px;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    #000 0%,
-    rgba(10, 10, 18, 0.82) 28%,
-    rgba(10, 10, 18, 0.35) 62%,
-    rgba(10, 10, 18, 0) 100%
-  );
+/* About page only: match header strip to page base (same as body) — pill still uses glass on this */
+body.page-about .header {
+  background-color: var(--color-body-bg);
+  background-image: none;
+}
+
+/* Same base behind first section so no seam under fixed header */
+body.page-about #aboutPageInner > .about-orbit-hero {
+  background-color: var(--color-body-bg);
 }
 
 .header .container-fluid {
@@ -484,7 +495,12 @@ h6 {
   margin: 0;
   font-weight: 400;
   color: #fff;
-  font-family: var(--font-secondary);
+  font-family: var(--font-header);
+}
+
+.header .navbar a,
+.header .navbar a:focus {
+  font-family: var(--font-header);
 }
 
 .header .logo i {
@@ -580,7 +596,7 @@ h6 {
   .navbar-pill ul {
     position: relative;
     z-index: 1;
-    background: rgba(30, 30, 40, 0.45);
+    background: var(--nav-pill-track-bg);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border-radius: 9999px;
@@ -707,7 +723,7 @@ h6 {
     inset: auto;
     padding: 6px 8px;
     margin: 0;
-    background: rgba(30, 30, 40, 0.45);
+    background: var(--nav-pill-track-bg);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border-radius: 9999px;
@@ -818,7 +834,7 @@ h6 {
     inset: auto;
     padding: 5px 6px;
     margin: 0;
-    background: rgba(30, 30, 40, 0.45);
+    background: var(--nav-pill-track-bg);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
     border-radius: 9999px;
@@ -1550,7 +1566,7 @@ h6 {
   margin-bottom: 20px;
   padding-bottom: 20px;
   position: relative;
-  font-family: var(--font-secondary);
+  font-family: var(--font-header);
 }
 
 .gallery-single .portfolio-info h3:after {
@@ -1620,7 +1636,7 @@ h6 {
   font-weight: 700;
   margin-bottom: 20px;
   color: #fff;
-  font-family: var(--font-secondary);
+  font-family: var(--font-header);
 }
 
 .gallery-single .portfolio-description p {
@@ -2025,9 +2041,41 @@ h6 {
 .hero h2 {
   margin: 0 0 10px 0;
   font-size: 38px;
-  font-weight: 700;
+  font-weight: 400;
   color: #fff;
-  font-family: var(--font-secondary);
+  font-family: var(--font-header);
+}
+
+.hero h2 .hero-title-wt {
+  font-weight: 300;
+}
+
+.hero h2 .hero-title-reg {
+  font-weight: 400;
+}
+
+.hero h2 .hero-title-ital {
+  font-weight: 400;
+  font-style: italic;
+}
+
+.hero h2 .hero-title-bd,
+.hero h2 .hero-name {
+  font-weight: 700;
+}
+
+.hero h2 .hero-title-bd {
+  background-image: linear-gradient(
+    var(--hero-title-gradient-angle, 90deg),
+    var(--hero-title-warm, #ffb16a) 0%,
+    var(--hero-title-warm, #ffb16a) var(--hero-title-warm-stop, 26%),
+    var(--hero-title-mid, #f28ac8) var(--hero-title-mid-stop, 52%),
+    var(--hero-title-cool, #5bb8ff) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
 }
 
 .hero h2 span {
@@ -2319,6 +2367,7 @@ h6 {
   color: #fff;
   margin-bottom: 16px;
   font-size: 22px;
+  font-family: var(--font-header);
 }
 
 .interactive-frame {
