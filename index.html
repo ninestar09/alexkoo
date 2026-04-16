@@ -41,11 +41,7 @@
   <header id="header" class="header d-flex align-items-center fixed-top">
     <div class="container-fluid d-flex align-items-center justify-content-between">
 
-      <a href="index.html" class="logo d-flex align-items-center  me-auto me-lg-0">
-        <!-- Uncomment the line below if you also wish to use an image logo -->
-        <!-- <img src="assets/img/logo.png" alt=""> -->
-        <h1>Mr.Koo</h1>
-      </a>
+      <div class="header__brand-spacer me-auto me-lg-0" aria-hidden="true"></div>
 
       <nav id="navbar" class="navbar navbar-pill">
         <span class="nav-pill-indicator" id="navPillIndicator" aria-hidden="true"></span>
@@ -90,9 +86,39 @@
   <main id="main">
 
     <!-- Intro text between hero CTA and gallery -->
-    <section class="hero-intro text-center" data-aos="fade-up" data-aos-duration="750" data-aos-delay="120">
-      <div class="container">
-        <p class="hero-intro-text"><span class="hero-intro-lg hero-intro-highlight">Award-winning</span> 3D &amp; XR developer | <span class="hero-intro-highlight">16+ years</span> shaping <em class="hero-intro-em">Media &amp; Entertainment</em> through immersive technology | Designing <span class="hero-intro-highlight">AI-native Hybrid spatial UX</span> where complexity is absorbed by the system and clarity is returned to the user. My practice in <span class="hero-intro-highlight hero-intro-lg">inclusive, accessible HCI</span> treats simplicity as the highest form of respect for attention, for ability, for <em class="hero-intro-em">the user</em> on the other side of the experience.</p>
+    <section class="hero-intro" data-aos="fade-up" data-aos-duration="750" data-aos-delay="120">
+      <div class="container-fluid hero-intro-inner px-3 px-lg-4">
+        <div class="hero-intro-layout">
+          <div class="hero-intro-side hero-intro-side--left" aria-hidden="true">
+            <div class="hero-intro-cube">
+              <div class="hero-intro-cube__camera">
+                <div class="hero-intro-cube__axis">
+                  <span class="hero-intro-cube__face hero-intro-cube__face--front"></span>
+                  <span class="hero-intro-cube__face hero-intro-cube__face--back"></span>
+                  <span class="hero-intro-cube__face hero-intro-cube__face--right"></span>
+                  <span class="hero-intro-cube__face hero-intro-cube__face--left"></span>
+                  <span class="hero-intro-cube__face hero-intro-cube__face--top"></span>
+                  <span class="hero-intro-cube__face hero-intro-cube__face--bottom"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="hero-intro-text"><span class="hero-intro-lg hero-intro-highlight hero-intro-highlight--tone-1">Award-winning</span> 3D &amp; XR developer | <span class="hero-intro-highlight hero-intro-highlight--tone-2">16+ years</span> shaping <em class="hero-intro-em">Media &amp; Entertainment</em> through immersive technology | Designing <span class="hero-intro-highlight hero-intro-highlight--tone-3">AI-native Hybrid spatial UX</span> where complexity is absorbed by the system and clarity is returned to the user. My practice in <span class="hero-intro-highlight hero-intro-lg hero-intro-highlight--tone-4">inclusive, accessible HCI</span> treats simplicity as the highest form of respect for attention, for ability, for <em class="hero-intro-em">the user</em> on the other side of the experience.</p>
+          <div class="hero-intro-side hero-intro-side--right" aria-hidden="true">
+            <div class="hero-intro-cube hero-intro-cube--split-faces">
+              <div class="hero-intro-cube__camera">
+                <div class="hero-intro-cube__axis">
+                  <span class="hero-intro-cube__face hero-intro-cube__face--front"><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span></span>
+                  <span class="hero-intro-cube__face hero-intro-cube__face--back"><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span></span>
+                  <span class="hero-intro-cube__face hero-intro-cube__face--right"><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span></span>
+                  <span class="hero-intro-cube__face hero-intro-cube__face--left"><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span></span>
+                  <span class="hero-intro-cube__face hero-intro-cube__face--top"><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span></span>
+                  <span class="hero-intro-cube__face hero-intro-cube__face--bottom"><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span><span class="hero-intro-cube__quad"></span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 

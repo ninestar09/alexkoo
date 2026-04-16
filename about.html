@@ -94,15 +94,17 @@
 
     .orbit-stage {
       position: relative;
-      width: min(900px, 100%);
+      /* One min() keeps the box square: avoid width + max-height fighting aspect-ratio (ellipse rings) */
+      width: min(900px, 100%, 82vmin);
       max-width: 100%;
       aspect-ratio: 1 / 1;
-      max-height: 80vh;
+      height: auto;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-inline: auto;
       box-sizing: border-box;
+      flex-shrink: 0;
     }
 
     .ring {
@@ -112,13 +114,15 @@
       transform: translate(-50%, -50%);
       border: 1px solid rgba(255, 255, 255, 0.06);
       border-radius: 50%;
+      aspect-ratio: 1 / 1;
+      height: auto;
       pointer-events: none;
     }
 
-    .ring.r1 { width: 38%; height: 38%; }
-    .ring.r2 { width: 62%; height: 62%; }
-    .ring.r3 { width: 86%; height: 86%; }
-    .ring.r4 { width: 110%; height: 110%; border-color: rgba(255, 255, 255, 0.04); }
+    .ring.r1 { width: 38%; }
+    .ring.r2 { width: 62%; }
+    .ring.r3 { width: 86%; }
+    .ring.r4 { width: 110%; border-color: rgba(255, 255, 255, 0.04); }
 
     .orbit {
       position: absolute;
@@ -126,13 +130,14 @@
       left: 50%;
       transform: translate(-50%, -50%);
       border-radius: 50%;
+      aspect-ratio: 1 / 1;
       pointer-events: none;
       animation: about-orbit-spin 40s linear infinite;
     }
 
-    .orbit.o1 { width: 62%; height: 62%; animation-duration: 35s; }
-    .orbit.o2 { width: 86%; height: 86%; animation-duration: 50s; animation-direction: reverse; }
-    .orbit.o3 { width: 110%; height: 110%; animation-duration: 65s; }
+    .orbit.o1 { width: 62%; height: auto; animation-duration: 35s; }
+    .orbit.o2 { width: 86%; height: auto; animation-duration: 50s; animation-direction: reverse; }
+    .orbit.o3 { width: 110%; height: auto; animation-duration: 65s; }
 
     @keyframes about-orbit-spin {
       to { transform: translate(-50%, -50%) rotate(360deg); }
@@ -624,9 +629,7 @@
   <header id="header" class="header d-flex align-items-center fixed-top">
     <div class="container-fluid d-flex align-items-center justify-content-between">
 
-      <a href="index.html" class="logo d-flex align-items-center  me-auto me-lg-0">
-        <h1>Mr.Koo</h1>
-      </a>
+      <div class="header__brand-spacer me-auto me-lg-0" aria-hidden="true"></div>
 
       <nav id="navbar" class="navbar navbar-pill">
         <span class="nav-pill-indicator" id="navPillIndicator" aria-hidden="true"></span>
@@ -665,6 +668,9 @@
           <div class="orbit o2"><span class="pill-tag left">Art Director</span></div>
           <div class="orbit o3"><span class="pill-tag bottom">Creative Technologist</span></div>
           <div class="orbit o3"><span class="pill-tag">Educator</span></div>
+          <div class="orbit o1"><span class="pill-tag bottom">UX Designer</span></div>
+          <div class="orbit o2"><span class="pill-tag bottom">Design Logic</span></div>
+          <div class="orbit o3"><span class="pill-tag right">Spatial UI</span></div>
 
           <div class="hero-center">
             <img src="assets/img/profile-img.jpg" alt="Alex Koo" class="avatar" width="110" height="110">

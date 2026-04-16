@@ -309,7 +309,115 @@ document.addEventListener('DOMContentLoaded', () => {
     updateHeroScrollFrame();
   }
 
+  /** Hero intro: slow clockwise drift + drag/touch to rotate (re-init after SPA swap) */
+  let heroIntroCubesAbort = null;
+  let heroIntroCubesRaf = null;
+  let heroIntroCubesAlive = false;
+
+  function disposeHeroIntroCubes() {
+    heroIntroCubesAlive = false;
+    if (heroIntroCubesRaf !== null) {
+      cancelAnimationFrame(heroIntroCubesRaf);
+      heroIntroCubesRaf = null;
+    }
+    if (heroIntroCubesAbort) {
+      heroIntroCubesAbort.abort();
+      heroIntroCubesAbort = null;
+    }
+  }
+
+  function initHeroIntroCubes() {
+    disposeHeroIntroCubes();
+
+    const roots = document.querySelectorAll('.hero-intro-cube');
+    if (!roots.length) return;
+
+    heroIntroCubesAbort = new AbortController();
+    const { signal } = heroIntroCubesAbort;
+    const ROT_Y = 0.42;
+    const ROT_X = 0.26;
+    const CLAMP_X = 34;
+    /* ~52s per full clockwise turn; zero when user prefers reduced motion */
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const DRIFT_DEG_PER_MS = reduceMotion ? 0 : 360 / 52000;
+
+    const states = [];
+
+    roots.forEach((root) => {
+      const axis = root.querySelector('.hero-intro-cube__axis');
+      if (!axis) return;
+
+      root.classList.add('hero-intro-cube--interactive');
+
+      const s = {
+        axis,
+        rotY: 0,
+        rotX: 0,
+        dragging: false,
+        lastX: 0,
+        lastY: 0
+      };
+      states.push(s);
+
+      root.addEventListener('pointerdown', (e) => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        s.dragging = true;
+        s.lastX = e.clientX;
+        s.lastY = e.clientY;
+        try {
+          root.setPointerCapture(e.pointerId);
+        } catch (_) { /* ignore */ }
+      }, { signal });
+
+      root.addEventListener('pointermove', (e) => {
+        if (!s.dragging) return;
+        const dx = e.clientX - s.lastX;
+        const dy = e.clientY - s.lastY;
+        s.lastX = e.clientX;
+        s.lastY = e.clientY;
+        s.rotY += dx * ROT_Y;
+        s.rotX -= dy * ROT_X;
+        s.rotX = Math.max(-CLAMP_X, Math.min(CLAMP_X, s.rotX));
+      }, { signal });
+
+      function endDrag(e) {
+        s.dragging = false;
+        if (e && e.pointerId != null) {
+          try {
+            root.releasePointerCapture(e.pointerId);
+          } catch (_) { /* ignore */ }
+        }
+      }
+
+      root.addEventListener('pointerup', endDrag, { signal });
+      root.addEventListener('pointercancel', endDrag, { signal });
+      root.addEventListener('lostpointercapture', () => { s.dragging = false; }, { signal });
+    });
+
+    let lastFrame = performance.now();
+    heroIntroCubesAlive = true;
+
+    function tick(now) {
+      if (!heroIntroCubesAlive) return;
+      const dt = Math.min(48, now - lastFrame);
+      lastFrame = now;
+      for (let i = 0; i < states.length; i++) {
+        const s = states[i];
+        if (!s.dragging && DRIFT_DEG_PER_MS > 0) {
+          s.rotY += DRIFT_DEG_PER_MS * dt;
+        }
+        s.axis.style.transform = `rotateX(${s.rotX.toFixed(2)}deg) rotateY(${s.rotY.toFixed(2)}deg)`;
+      }
+      if (heroIntroCubesAlive) {
+        heroIntroCubesRaf = requestAnimationFrame(tick);
+      }
+    }
+
+    heroIntroCubesRaf = requestAnimationFrame(tick);
+  }
+
   initHeroScrollFrames();
+  initHeroIntroCubes();
 
   /**
    * Parallax background: subtle move on scroll
@@ -474,6 +582,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           disposeHeroScrollFrames();
+          disposeHeroIntroCubes();
           syncPageScopedStyles(doc);
           appContent.innerHTML = newContent.innerHTML;
           if (doc.title) document.title = doc.title;
@@ -487,6 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (pushState) history.pushState({ path: href }, '', href);
           if (typeof AOS !== 'undefined') AOS.refresh();
           initHeroScrollFrames();
+          initHeroIntroCubes();
           initGalleryAmbientObserver();
           initAboutFadeUpObserver();
           pageTxPlayEnter();
