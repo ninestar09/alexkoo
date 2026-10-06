@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ALEX KOO</title>
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/css/blackbox-hero.css" rel="stylesheet">
+  <style>
+    html, body {
+      margin: 0;
+      background: #050506;
+      color: #8b8a87;
+      font: 11px/1.6 ui-monospace, "Cascadia Mono", Menlo, monospace;
+    }
+    #hero {
+      width: 100%;
+      height: 100vh;
+    }
+    .below {
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      border-top: 1px solid rgba(232, 230, 226, 0.06);
+    }
+  </style>
+</head>
+<body>
+  <div id="hero" aria-label="Interactive cube hero"></div>
+  <section class="below">Scroll up and down to torque the cube</section>
+  <script type="module">
+    import { mountBlackboxHero } from "./assets/js/blackbox-hero.js";
+    const hero = document.getElementById("hero");
+    mountBlackboxHero(hero, { title: "ALEX KOO" });
+
+    // ?demo sweeps a virtual pointer across the cube so the motion can be seen hands-free
+    if (new URLSearchParams(location.search).has("demo")) {
+      const t0 = performance.now();
+      const sweep = () => {
+        const t = (performance.now() - t0) / 1000;
+        const r = hero.getBoundingClientRect();
+        const x = r.left + r.width * (0.5 + 0.22 * Math.sin(t * 2.1));
+        const y = r.top + r.height * (0.5 + 0.12 * Math.sin(t * 1.3));
+        hero.dispatchEvent(new PointerEvent("pointermove", { clientX: x, clientY: y, bubbles: true }));
+        requestAnimationFrame(sweep);
+      };
+      requestAnimationFrame(sweep);
+    }
+  </script>
+</body>
+</html>
