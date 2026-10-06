@@ -155,3 +155,59 @@
 .bbihero.bbih-static {
   background: radial-gradient(ellipse at 50% 46%, #141416 0%, #050506 62%);
 }
+
+.bbihero .bbih-popups {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9;
+}
+
+.bbihero .bbih-popup {
+  position: absolute;
+  min-width: 132px;
+  max-width: 200px;
+  padding: 10px 12px 11px;
+  border: 1px solid color-mix(in oklab, var(--accent, #9ad) 55%, transparent);
+  background: rgba(8, 9, 12, 0.82);
+  backdrop-filter: blur(6px);
+  color: #d8d6d1;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35), 0 10px 28px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  transform: translateY(6px) scale(0.96);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  letter-spacing: 0.08em;
+}
+
+.bbihero .bbih-popup.is-on {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.bbihero .bbih-popup::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent, #9ad);
+}
+
+.bbihero .bbih-popup-k {
+  font-size: 9px;
+  color: var(--accent, #9ad);
+  letter-spacing: 0.22em;
+  margin-bottom: 5px;
+}
+
+.bbihero .bbih-popup-b {
+  font-size: 10px;
+  line-height: 1.55;
+  white-space: pre;
+  color: #bdbbb6;
+}
+
+.bbihero.is-dynamic-color .bbih-logo text {
+  stroke: var(--ink);
+}

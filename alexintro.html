@@ -30,7 +30,10 @@
 </head>
 <body>
   <div id="hero" aria-label="Interactive cube hero"></div>
-  <section class="below">Drag the cube to move · scroll to torque</section>
+  <section class="below">
+    Drag the cube to move · scroll to torque
+    <div style="margin-top:1rem;letter-spacing:0.18em"><a href="alexintro-play.html" style="color:#c8c6c1;text-decoration:none;border-bottom:1px solid rgba(232,230,226,.22);padding-bottom:2px">Open play variant</a></div>
+  </section>
   <script type="module">
     import { mountBlackboxHero } from "./assets/js/blackbox-hero.js";
     const hero = document.getElementById("hero");

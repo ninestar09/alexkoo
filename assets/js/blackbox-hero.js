@@ -82,6 +82,13 @@ const DEFAULTS = {
   relief: 4.8,
   iridescence: 1,
   iridSpread: 0.84,
+
+  // play variant (off by default — alexintro stays as saved)
+  dynamicColor: false,
+  colorSpeed: 0.22,
+  colorAmp: 0.85,
+  popups: false,
+  popupLife: 3.2,
 };
 
 /* ------------------------------------------------------------------ */
@@ -356,6 +363,7 @@ uniform sampler2D uDen, uVel, uCurl, uPres, uLogo;
 uniform vec2  uTexel;
 uniform float uLens, uExposure, uContrast, uRelief, uIrid, uIridSpread, uDetail, uDiffusion;
 uniform float uPresence, uFaceShade, uGlint, uFog;
+uniform float uHue, uColorAmp;
 uniform vec4  uPulse[4];
 uniform float uPulseSpeed, uPulseWidth, uPulseLife, uPulseReveal, uPulseRing;
 uniform float uGrid, uGridDot, uGridSizeRnd, uGridOpRnd, uGridStagger, uGridOpacity;
@@ -366,6 +374,16 @@ const vec3 SILVER = vec3(0.93, 0.92, 0.90);
 
 vec3 spectral(float t){ return 0.5 + 0.5 * cos(6.28318 * (t + vec3(0.0, 0.33, 0.67))); }
 float dens(vec2 uv, vec2 keep){ return dot(texture(uDen, uv).rg, keep); }
+vec3 hueShift(vec3 c, float h){
+  // approximate luminance-preserving hue rotate in YIQ
+  float u = cos(h), w = sin(h);
+  mat3 m = mat3(
+    0.299 + 0.701*u + 0.168*w, 0.587 - 0.587*u + 0.330*w, 0.114 - 0.114*u - 0.497*w,
+    0.299 - 0.299*u - 0.328*w, 0.587 + 0.413*u + 0.035*w, 0.114 - 0.114*u + 0.292*w,
+    0.299 - 0.300*u + 1.250*w, 0.587 - 0.588*u - 1.050*w, 0.114 + 0.886*u - 0.203*w
+  );
+  return clamp(c * m, 0.0, 2.5);
+}
 
 void main(){
   vec2 w = vUv * uAspect;
@@ -414,16 +432,17 @@ void main(){
   lum = pow(lum, uContrast);
   lum *= 0.60 + diff * 0.55;
   lum += rim * lum * 0.45;
-  vec3 col = mix(vec3(0.055, 0.058, 0.066), SILVER, clamp(lum, 0.0, 1.0));
+  vec3 baseTone = mix(SILVER, spectral(uHue * 0.16 + 0.02), uColorAmp * 0.55);
+  vec3 col = mix(vec3(0.055, 0.058, 0.066), baseTone, clamp(lum, 0.0, 1.0));
   col *= smoothstep(0.0, 0.05, lum + 0.015);
   col += vec3(0.05, 0.052, 0.058) * face * occB * uFaceShade * depth;
 
   // thin-film colour appears only where the flow is sheared hard
   float shear = abs(texture(uCurl, vUv).x);
   float band = smoothstep(0.06, 0.4, d) * (1.0 - smoothstep(1.3, 2.2, d));
-  vec3 film = spectral(d * 1.6 + shear * 2.0 + uTime * 0.03);
-  film = mix(vec3(dot(film, vec3(0.3333))), film, uIridSpread);
-  col += film * min(shear * 3.0, 1.6) * band * uIrid * 0.5;
+  vec3 film = spectral(d * 1.6 + shear * 2.0 + uTime * 0.03 + uHue);
+  film = mix(vec3(dot(film, vec3(0.3333))), film, mix(uIridSpread, 1.0, uColorAmp));
+  col += film * min(shear * 3.0, 1.6) * band * uIrid * (0.5 + uColorAmp * 0.55);
 
   float spin = length(uOmega);
   float edgeBand = (1.0 - smoothstep(0.012, 0.10, depth)) * inside;
@@ -492,6 +511,17 @@ void main(){
     col += vec3(0.88, 0.90, 0.95) * wire * fill * uTypeStroke * (0.55 + typeIn * 0.9);
   }
   col += (fill * 1.1 + soft * 1.5) * typeIn * uTypeGlow * vec3(0.84, 0.87, 0.95) * 0.5;
+
+  // dynamic palette: hue-walk the whole frame + pulse accents on the cube
+  if (uColorAmp > 0.001){
+    float ang = uHue * 6.28318;
+    col = mix(col, hueShift(col, ang), uColorAmp * 0.72);
+    vec3 accent = spectral(uHue + depth * 0.5 + face * 0.2);
+    float rimC = pow(1.0 - max(dot(nW, -rd), 0.0), 4.0);
+    col += accent * inside * uColorAmp * (0.04 + rimC * 0.1);
+    col += accent * wire * uColorAmp * 0.18;
+    col += accent * typeIn * uColorAmp * 0.12;
+  }
 
   vec2 vc = vUv - 0.5;
   col *= 1.0 - dot(vc, vc) * 0.55;
@@ -719,9 +749,12 @@ export function mountBlackboxHero(root, options = {}) {
   const logo = add("bbih-logo");
   const hud = add("bbih-hud");
   const probeLayer = add("bbih-probes");
+  const popupLayer = add("bbih-popups");
   const telemetry = add("bbih-telemetry");
   logo.style.opacity = cfg.logoOpacity;
   telemetry.style.opacity = cfg.hudOpacity;
+  if (cfg.dynamicColor) root.classList.add("is-dynamic-color");
+  if (cfg.popups) root.classList.add("is-popups");
   buildTicks(hud);
 
   let disposed = false;
@@ -1094,15 +1127,94 @@ export function mountBlackboxHero(root, options = {}) {
       }
     }
   }
-  function onUp() {
+  function accentCss(t = simT) {
+    const h = ((t * cfg.colorSpeed * 60) % 360 + 360) % 360;
+    return `hsl(${h.toFixed(0)} 70% 68%)`;
+  }
+  function showPopup(nx, ny, title, body, kind = "note") {
+    if (!cfg.popups) return;
+    while (popupLayer.childElementCount >= 4) popupLayer.firstChild.remove();
+    const el = document.createElement("div");
+    el.className = `bbih-popup is-${kind}`;
+    el.style.setProperty("--accent", accentCss());
+    const [px, py] = toPx(nx, ny);
+    const left = clamp(px + 14, 12, Math.max(12, cssW - 200));
+    const top = clamp(py - 10, 12, Math.max(12, cssH - 96));
+    el.style.left = `${left.toFixed(1)}px`;
+    el.style.top = `${top.toFixed(1)}px`;
+    el.innerHTML =
+      `<div class="bbih-popup-k">${title}</div>` +
+      `<div class="bbih-popup-b">${body}</div>`;
+    popupLayer.appendChild(el);
+    requestAnimationFrame(() => el.classList.add("is-on"));
+    const life = Math.max(1.2, cfg.popupLife) * 1000;
+    setTimeout(() => {
+      el.classList.remove("is-on");
+      setTimeout(() => el.remove(), 280);
+    }, life);
+  }
+  function nearestProbe(wx, wy, maxDist = 0.06) {
+    let best = null, bestD = maxDist;
+    for (const p of probes) {
+      if (p.vis < 0.08) continue;
+      const d = Math.hypot(p.x - wx, p.y - wy);
+      if (d < bestD) {
+        bestD = d;
+        best = p;
+      }
+    }
+    return best;
+  }
+  function handlePopupTap(x, y) {
+    if (!cfg.popups || ptr.moved) return;
+    const wx = x * G, wy = y;
+    const probe = nearestProbe(wx, wy, 0.07);
+    if (probe) {
+      const [vx, vy] = sampleFlow(probe.x / G, probe.y);
+      showPopup(
+        probe.x,
+        probe.y,
+        "NODE",
+        `x ${fmt(probe.x / G)}  y ${fmt(probe.y)}\nv ${fmt(Math.hypot(vx, vy))}  id ${Math.floor(probe.rnd * 999)}`,
+        "node"
+      );
+      pings.push({ x: probe.x, y: probe.y, t: 0, a: cfg.pingOpacity });
+      return;
+    }
+    if (hitCube(wx, wy)) {
+      const [ccx, ccy] = cubeCenter();
+      showPopup(
+        ccx,
+        ccy,
+        "CUBE",
+        `\u03c9 ${Math.hypot(...omega).toFixed(2)}  spin live\npos ${fmt(ccx / G)} ${fmt(ccy)}\npulse ${pulses.length}`,
+        "cube"
+      );
+      return;
+    }
+    const [vx, vy] = sampleFlow(x, y);
+    showPopup(
+      wx,
+      wy,
+      "FIELD",
+      `x ${fmt(x)}  y ${fmt(y)}\nflow ${fmt(Math.hypot(vx, vy))}  amp ${(cfg.colorAmp || 0).toFixed(2)}`,
+      "field"
+    );
+  }
+  function onUp(e) {
     if (ptr.down) ptr.release = simT;
     if (ptr.dragging) {
       // fling: keep a slice of pointer velocity as positional inertia
       cubeVel[0] = clamp(ptr.vx * 0.35, -2.5, 2.5);
       cubeVel[1] = clamp(ptr.vy * 0.35, -2.5, 2.5);
     }
+    const tap = ptr.down && !ptr.moved;
     ptr.dragging = false;
     ptr.down = false;
+    if (cfg.popups && tap) {
+      const [x, y] = e ? toFrame(e) : [ptr.x, ptr.y];
+      handlePopupTap(x, y);
+    }
     setCubeCursor(ptr.active && hitCube(ptr.x * G, ptr.y), false);
   }
   function onLeave() {
@@ -1384,6 +1496,9 @@ export function mountBlackboxHero(root, options = {}) {
     gl.uniform1f(u.uTypeGlow, cfg.typeGlow);
     gl.uniform1f(u.uTypeGrid, cfg.typeGrid);
     gl.uniform1f(u.uTypeStroke, cfg.typeStroke);
+    const hue = cfg.dynamicColor ? (simT * cfg.colorSpeed) % 1 : 0;
+    gl.uniform1f(u.uHue, hue);
+    gl.uniform1f(u.uColorAmp, cfg.dynamicColor ? cfg.colorAmp : 0);
     draw();
   }
 
@@ -1440,7 +1555,12 @@ export function mountBlackboxHero(root, options = {}) {
         if (alpha < 0.005) continue;
         const [ax, ay] = toPx(a.x, a.y);
         const [bx, by] = toPx(b.x, b.y);
-        ctx.strokeStyle = `rgba(232,230,226,${alpha.toFixed(3)})`;
+        if (cfg.dynamicColor) {
+          const h = ((simT * cfg.colorSpeed * 360 + a.rnd * 80) % 360 + 360) % 360;
+          ctx.strokeStyle = `hsla(${h.toFixed(0)}, 65%, 72%, ${alpha.toFixed(3)})`;
+        } else {
+          ctx.strokeStyle = `rgba(232,230,226,${alpha.toFixed(3)})`;
+        }
         ctx.beginPath();
         ctx.moveTo(ax, ay);
         ctx.lineTo(bx, by);
@@ -1453,7 +1573,13 @@ export function mountBlackboxHero(root, options = {}) {
       if (p.vis < 0.02) continue;
       const [x, y] = toPx(p.x, p.y);
       const r = 0.7 + p.size * 0.9;
-      ctx.fillStyle = `rgba(236,234,230,${(p.vis * (0.45 + 0.5 * (1 - p.rnd))).toFixed(3)})`;
+      const a = p.vis * (0.45 + 0.5 * (1 - p.rnd));
+      if (cfg.dynamicColor) {
+        const h = ((simT * cfg.colorSpeed * 360 + p.rnd * 140) % 360 + 360) % 360;
+        ctx.fillStyle = `hsla(${h.toFixed(0)}, 70%, 78%, ${a.toFixed(3)})`;
+      } else {
+        ctx.fillStyle = `rgba(236,234,230,${a.toFixed(3)})`;
+      }
       ctx.beginPath();
       ctx.arc(x, y, r, 0, Math.PI * 2);
       ctx.fill();
@@ -1514,6 +1640,11 @@ export function mountBlackboxHero(root, options = {}) {
     const mm = String(Math.floor(simT / 60)).padStart(2, "0");
     const ss = String(Math.floor(simT % 60)).padStart(2, "0");
     telemetry.textContent = `\u03c9 ${Math.hypot(...omega).toFixed(2)}   t ${mm}:${ss}   n ${probeCount}`;
+    if (cfg.dynamicColor) {
+      const h = ((simT * cfg.colorSpeed * 360) % 360 + 360) % 360;
+      root.style.setProperty("--ink", `hsl(${h.toFixed(0)} 35% 90%)`);
+      root.style.setProperty("--accent", `hsl(${h.toFixed(0)} 70% 68%)`);
+    }
   }
 
   let last = performance.now() / 1000;
