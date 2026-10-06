@@ -3,6 +3,7 @@
  * A WebGL2 smoke simulation flows around a ray-traced, freely spinning cube.
  * Moving the pointer near the cube spins it, holding still brakes it,
  * entering the cube (or clicking) fires a scan pulse, scrolling adds torque.
+ * Click-drag on the cube to reposition it; release coasts with light inertia.
  */
 
 const DEFAULTS = {
@@ -61,6 +62,9 @@ const DEFAULTS = {
   coast: 0.925,
   idleTurn: 3,
   scrollTorque: 6,
+  draggable: true,
+  dragInertia: 0.9,
+  dragSpin: 0.55,
 
   // medium
   atmosphere: 0.8,
@@ -98,11 +102,12 @@ precision highp sampler2D;
 in vec2 vUv;
 out vec4 frag;
 uniform vec2  uAspect;
+uniform vec2  uCubePos;
 uniform float uTime, uSeed, uCube;
 uniform mat3  uRot, uRotT;
 uniform vec3  uOmega;
 
-vec2 cubeC(){ return uAspect * 0.5; }
+vec2 cubeC(){ return uCubePos; }
 float sdBox(vec3 p, float b){
   vec3 q = abs(p) - vec3(b);
   return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
@@ -541,46 +546,75 @@ function ensureFont(href) {
 const escapeXml = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
 
-async function buildLogo(cfg) {
+function titleLinesFor(cfg, stacked) {
+  if (Array.isArray(cfg.titleLines) && cfg.titleLines.length) {
+    return cfg.titleLines.map(String);
+  }
+  const title = String(cfg.title || "");
+  if (!stacked) return [title];
+  const parts = title.trim().split(/\s+/).filter(Boolean);
+  return parts.length > 1 ? parts : [title];
+}
+
+async function buildLogo(cfg, stacked = false) {
   const family = cfg.fontFamily;
   const font = (px) => `${cfg.fontWeight} ${px}px "${family}", "Arial Black", sans-serif`;
   try {
     await Promise.race([document.fonts.load(font(160)), new Promise((r) => setTimeout(r, 3000))]);
   } catch (_) {}
 
+  const lines = titleLinesFor(cfg, stacked);
   const mask = document.createElement("canvas");
   mask.width = LOGO_W;
   mask.height = LOGO_H;
   const ctx = mask.getContext("2d");
-
-  ctx.font = font(100);
   const titleW = LOGO_W * 0.94;
-  let size = (100 * titleW) / Math.max(ctx.measureText(cfg.title).width, 1);
-  ctx.font = font(size);
-  let m = ctx.measureText(cfg.title);
-  const maxH = cfg.subtitle ? LOGO_H * 0.42 : LOGO_H * 0.6;
-  if (m.actualBoundingBoxAscent + m.actualBoundingBoxDescent > maxH) {
-    size *= maxH / (m.actualBoundingBoxAscent + m.actualBoundingBoxDescent);
-    ctx.font = font(size);
-    m = ctx.measureText(cfg.title);
-  }
-  const width = m.width;
-  const asc = m.actualBoundingBoxAscent;
-  const desc = m.actualBoundingBoxDescent;
-
   const sub = cfg.subtitle ? String(cfg.subtitle) : "";
-  const subSize = size * 0.36;
+
+  // fit each title line, then scale the whole stack into the logo frame
+  let size = 100;
+  ctx.font = font(size);
+  const longest = Math.max(...lines.map((ln) => ctx.measureText(ln).width), 1);
+  size = (100 * titleW) / longest;
+  ctx.font = font(size);
+  let metrics = lines.map((ln) => {
+    const m = ctx.measureText(ln);
+    return { text: ln, width: m.width, asc: m.actualBoundingBoxAscent, desc: m.actualBoundingBoxDescent };
+  });
+  const lineGap = size * (lines.length > 1 ? 0.18 : 0);
+  let stackH =
+    metrics.reduce((h, m) => h + m.asc + m.desc, 0) + lineGap * Math.max(0, lines.length - 1);
+  const maxStack = sub ? LOGO_H * 0.55 : LOGO_H * (lines.length > 1 ? 0.78 : 0.6);
+  if (stackH > maxStack) {
+    size *= maxStack / stackH;
+    ctx.font = font(size);
+    metrics = lines.map((ln) => {
+      const m = ctx.measureText(ln);
+      return { text: ln, width: m.width, asc: m.actualBoundingBoxAscent, desc: m.actualBoundingBoxDescent };
+    });
+    stackH =
+      metrics.reduce((h, m) => h + m.asc + m.desc, 0) +
+      size * (lines.length > 1 ? 0.18 : 0) * Math.max(0, lines.length - 1);
+  }
   const gap = size * 0.3;
-  let subAsc = 0, subDesc = 0;
+  const subSize = size * 0.36;
+  let subAsc = 0, subDesc = 0, subWidth = 0;
   if (sub) {
     ctx.font = font(subSize);
     const sm = ctx.measureText(sub);
     subAsc = sm.actualBoundingBoxAscent;
     subDesc = sm.actualBoundingBoxDescent;
+    subWidth = sm.width;
   }
-  const blockH = asc + desc + (sub ? gap + subAsc + subDesc : 0);
-  const base1 = (LOGO_H - blockH) / 2 + asc;
-  const base2 = base1 + desc + gap + subAsc;
+  const blockH = stackH + (sub ? gap + subAsc + subDesc : 0);
+  let y = (LOGO_H - blockH) / 2;
+  const bases = metrics.map((m) => {
+    const base = y + m.asc;
+    y += m.asc + m.desc + size * (lines.length > 1 ? 0.18 : 0);
+    return { ...m, base };
+  });
+  const baseSub = sub ? y - size * (lines.length > 1 ? 0.18 : 0) + gap + subAsc : 0;
+  const blockWidth = Math.max(...metrics.map((m) => m.width), subWidth);
 
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, LOGO_W, LOGO_H);
@@ -588,29 +622,35 @@ async function buildLogo(cfg) {
   ctx.textBaseline = "alphabetic";
   ctx.textAlign = "center";
   ctx.font = font(size);
-  ctx.fillText(cfg.title, LOGO_W / 2, base1);
+  for (const ln of bases) ctx.fillText(ln.text, LOGO_W / 2, ln.base);
 
   if (sub) {
     ctx.font = font(subSize);
     ctx.textAlign = "left";
     const chars = [...sub];
     const widths = chars.map((ch) => ctx.measureText(ch).width);
-    const extra = chars.length > 1 ? (width - widths.reduce((a, b) => a + b, 0)) / (chars.length - 1) : 0;
-    let x = LOGO_W / 2 - width / 2;
+    const extra = chars.length > 1 ? (blockWidth - widths.reduce((a, b) => a + b, 0)) / (chars.length - 1) : 0;
+    let x = LOGO_W / 2 - blockWidth / 2;
     chars.forEach((ch, i) => {
-      ctx.fillText(ch, x, base2);
+      ctx.fillText(ch, x, baseSub);
       x += widths[i] + extra;
     });
   }
 
   const ff = `&quot;${escapeXml(family)}&quot;, Arial Black, sans-serif`;
+  const svgLines = bases
+    .map(
+      (ln) =>
+        `<text x="${LOGO_W / 2}" y="${ln.base.toFixed(1)}" text-anchor="middle" font-family="${ff}" font-weight="${cfg.fontWeight}" font-size="${size.toFixed(1)}" ` +
+        `textLength="${ln.width.toFixed(1)}" lengthAdjust="spacingAndGlyphs">${escapeXml(ln.text)}</text>`
+    )
+    .join("");
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LOGO_W} ${LOGO_H}" aria-label="${escapeXml(cfg.title)}">` +
-    `<text x="${LOGO_W / 2}" y="${base1.toFixed(1)}" text-anchor="middle" font-family="${ff}" font-weight="${cfg.fontWeight}" font-size="${size.toFixed(1)}" ` +
-    `textLength="${width.toFixed(1)}" lengthAdjust="spacingAndGlyphs">${escapeXml(cfg.title)}</text>` +
+    svgLines +
     (sub
-      ? `<text x="${LOGO_W / 2}" y="${base2.toFixed(1)}" text-anchor="middle" font-family="${ff}" font-weight="${cfg.fontWeight}" font-size="${subSize.toFixed(1)}" ` +
-        `textLength="${width.toFixed(1)}" lengthAdjust="spacing">${escapeXml(sub)}</text>`
+      ? `<text x="${LOGO_W / 2}" y="${baseSub.toFixed(1)}" text-anchor="middle" font-family="${ff}" font-weight="${cfg.fontWeight}" font-size="${subSize.toFixed(1)}" ` +
+        `textLength="${blockWidth.toFixed(1)}" lengthAdjust="spacing">${escapeXml(sub)}</text>`
       : "") +
     `</svg>`;
 
@@ -687,12 +727,20 @@ export function mountBlackboxHero(root, options = {}) {
   let disposed = false;
   let logoMask = null;
   let uploadLogo = null;
-  buildLogo(cfg).then(({ svg, mask }) => {
+  let logoStacked = null;
+  const applyLogo = ({ svg, mask }) => {
     if (disposed) return;
     logo.innerHTML = svg;
     logoMask = mask;
     if (uploadLogo) uploadLogo(mask);
-  });
+  };
+  const refreshLogo = (stacked) => {
+    logoStacked = stacked;
+    root.classList.toggle("is-stacked-logo", !!stacked);
+    return buildLogo(cfg, stacked).then(applyLogo);
+  };
+  // stack the name on mobile / portrait ratios; keep it centered always
+  refreshLogo(isMobile || window.innerHeight > window.innerWidth * 1.05);
 
   const gl = canvas.getContext("webgl2", {
     antialias: false,
@@ -818,11 +866,20 @@ export function mountBlackboxHero(root, options = {}) {
     const oldG = G;
     G = canvas.width / canvas.height;
     for (const p of probes) p.x *= G / oldG;
+    if (cubePos) {
+      cubePos[0] *= G / Math.max(oldG, 1e-6);
+      clampCubePos();
+    } else {
+      cubePos = [G * 0.5, 0.5];
+    }
 
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     dots.width = Math.round(cssW * dpr);
     dots.height = Math.round(cssH * dpr);
-    logo.style.width = `${cfg.logoWidth * cssW}px`;
+    // slightly taller footprint when the name is stacked on two lines
+    const stack = isMobile || cssH > cssW * 1.05;
+    logo.style.width = `${(stack ? Math.min(cfg.logoWidth * 1.08, 0.72) : cfg.logoWidth) * cssW}px`;
+    if (logoStacked !== stack) refreshLogo(stack);
 
     if (vel) {
       [...vel.targets(), ...den.targets(), ...pres.targets(), curlT, divT, readT].forEach(freeTarget);
@@ -840,7 +897,26 @@ export function mountBlackboxHero(root, options = {}) {
 
   /* ---------- state ---------- */
 
-  const ptr = { x: 0.5, y: 0.5, vx: 0, vy: 0, active: false, down: false, hold: 0, release: -1, lastX: null, lastY: null, lastT: 0, wasIn: false };
+  const ptr = {
+    x: 0.5,
+    y: 0.5,
+    vx: 0,
+    vy: 0,
+    active: false,
+    down: false,
+    hold: 0,
+    release: -1,
+    lastX: null,
+    lastY: null,
+    lastT: 0,
+    wasIn: false,
+    dragging: false,
+    grabOX: 0,
+    grabOY: 0,
+    moved: false,
+  };
+  let cubePos = null;
+  const cubeVel = [0, 0];
   const q = [1, 0, 0, 0];
   {
     // start tilted so three faces read immediately
@@ -866,8 +942,24 @@ export function mountBlackboxHero(root, options = {}) {
 
   const s = cfg.cubeSize;
 
+  function cubeCenter() {
+    return cubePos || [G * 0.5, 0.5];
+  }
+  function clampCubePos() {
+    const [cx, cy] = cubeCenter();
+    const mx = s * 1.8;
+    const my = s * 1.8;
+    cubePos[0] = clamp(cx, mx, G - mx);
+    cubePos[1] = clamp(cy, my, 1 - my);
+  }
+  function setCubeCursor(over, dragging) {
+    root.classList.toggle("is-over-cube", !!over && !dragging);
+    root.classList.toggle("is-dragging-cube", !!dragging);
+  }
+
   function hitCube(wx, wy) {
-    const dx = wx - G * 0.5, dy = wy - 0.5, dz = -cfg.lens;
+    const [ccx, ccy] = cubeCenter();
+    const dx = wx - ccx, dy = wy - ccy, dz = -cfg.lens;
     const len = Math.hypot(dx, dy, dz);
     const ro = mulR(RT, 0, 0, cfg.lens);
     const rd = mulR(RT, dx / len, dy / len, dz / len);
@@ -882,7 +974,8 @@ export function mountBlackboxHero(root, options = {}) {
     return tf >= tn && tf >= 0;
   }
   function sliceSD(wx, wy) {
-    const p = mulR(RT, wx - G * 0.5, wy - 0.5, 0);
+    const [ccx, ccy] = cubeCenter();
+    const p = mulR(RT, wx - ccx, wy - ccy, 0);
     const qx = Math.abs(p[0]) - s, qy = Math.abs(p[1]) - s, qz = Math.abs(p[2]) - s;
     const out = Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0));
     return out + Math.min(Math.max(qx, qy, qz), 0);
@@ -961,6 +1054,20 @@ export function mountBlackboxHero(root, options = {}) {
     ptr.lastY = y;
     ptr.lastT = now;
     ptr.active = true;
+
+    if (ptr.dragging && cfg.draggable && cubePos) {
+      const nx = x * G - ptr.grabOX;
+      const ny = y - ptr.grabOY;
+      if (Math.hypot(nx - cubePos[0], ny - cubePos[1]) > 0.002) ptr.moved = true;
+      cubePos[0] = nx;
+      cubePos[1] = ny;
+      clampCubePos();
+      cubeVel[0] = ptr.vx;
+      cubeVel[1] = ptr.vy;
+      if (e.cancelable) e.preventDefault();
+    }
+
+    setCubeCursor(hitCube(x * G, y) || ptr.dragging, ptr.dragging);
   }
   function onDown(e) {
     const [x, y] = toFrame(e);
@@ -969,20 +1076,41 @@ export function mountBlackboxHero(root, options = {}) {
     ptr.active = true;
     ptr.down = true;
     ptr.release = -1;
+    ptr.moved = false;
     try {
       root.setPointerCapture(e.pointerId);
     } catch (_) {}
-    if (hitCube(x * G, y)) firePulse();
+    const onCube = hitCube(x * G, y);
+    if (onCube) {
+      firePulse();
+      if (cfg.draggable && cubePos) {
+        ptr.dragging = true;
+        ptr.grabOX = x * G - cubePos[0];
+        ptr.grabOY = y - cubePos[1];
+        cubeVel[0] = 0;
+        cubeVel[1] = 0;
+        setCubeCursor(true, true);
+        if (e.cancelable) e.preventDefault();
+      }
+    }
   }
   function onUp() {
     if (ptr.down) ptr.release = simT;
+    if (ptr.dragging) {
+      // fling: keep a slice of pointer velocity as positional inertia
+      cubeVel[0] = clamp(ptr.vx * 0.35, -2.5, 2.5);
+      cubeVel[1] = clamp(ptr.vy * 0.35, -2.5, 2.5);
+    }
+    ptr.dragging = false;
     ptr.down = false;
+    setCubeCursor(ptr.active && hitCube(ptr.x * G, ptr.y), false);
   }
   function onLeave() {
     ptr.lastX = null;
     ptr.vx = 0;
     ptr.vy = 0;
     ptr.active = false;
+    if (!ptr.dragging) setCubeCursor(false, false);
   }
   let lastTop = null;
   function onScroll() {
@@ -996,8 +1124,8 @@ export function mountBlackboxHero(root, options = {}) {
     }
     lastTop = top;
   }
-  root.addEventListener("pointermove", onMove, { passive: true });
-  root.addEventListener("pointerdown", onDown);
+  root.addEventListener("pointermove", onMove, { passive: false });
+  root.addEventListener("pointerdown", onDown, { passive: false });
   root.addEventListener("pointerup", onUp);
   root.addEventListener("pointercancel", onUp);
   root.addEventListener("pointerleave", onLeave);
@@ -1025,17 +1153,19 @@ export function mountBlackboxHero(root, options = {}) {
   /* ---------- per-frame ---------- */
 
   function updateRotation(dt) {
-    const ox = (ptr.x - 0.5) * G, oy = ptr.y - 0.5;
-    const near = ptr.active ? Math.exp(-(ox * ox + oy * oy) / 0.34) : 0;
+    const [ccx, ccy] = cubeCenter();
+    const ox = ptr.x * G - ccx, oy = ptr.y - ccy;
+    const near = ptr.active && !ptr.dragging ? Math.exp(-(ox * ox + oy * oy) / 0.34) : 0;
     const l = clamp(ptr.vx, -3, 3), u = clamp(ptr.vy, -3, 3);
     const speed = Math.hypot(l, u);
     const boost = 1 + Math.min(speed / 3, 1) ** 2 * cfg.flickBoost;
-    const k = cfg.grip * 1.9 * dt * near * boost * (isMobile ? 2.5 : 1);
+    const gripScale = ptr.dragging ? cfg.dragSpin : 1;
+    const k = cfg.grip * 1.9 * dt * (ptr.dragging ? 1 : near) * boost * gripScale * (isMobile ? 2.5 : 1);
     omega[0] += -u * k;
     omega[1] += l * k;
     omega[2] += (l * oy - u * ox) * k * 0.6;
 
-    const braking = ptr.down && speed < 0.2;
+    const braking = ptr.down && !ptr.dragging && speed < 0.2;
     const damp = Math.exp(-(braking ? 7 : 4.2 - cfg.coast * 3.6) * dt);
     omega[0] *= damp;
     omega[1] *= damp;
@@ -1043,7 +1173,7 @@ export function mountBlackboxHero(root, options = {}) {
 
     const mag = Math.hypot(...omega);
     const idle = cfg.idleTurn * 0.28;
-    if (!braking && mag < idle * 2) {
+    if (!braking && !ptr.dragging && mag < idle * 2) {
       const ix = Math.sin(simT * 0.05 + cfg.seed), iy = 0.85, iz = Math.cos(simT * 0.041);
       const il = Math.hypot(ix, iy, iz);
       const r = Math.min(dt * 0.4, 1);
@@ -1069,8 +1199,8 @@ export function mountBlackboxHero(root, options = {}) {
 
     for (let i = 0; i < 8; i++) {
       const p = mulR(R, i & 1 ? s : -s, i & 2 ? s : -s, i & 4 ? s : -s);
-      CP[i * 3] = p[0] + G * 0.5;
-      CP[i * 3 + 1] = p[1] + 0.5;
+      CP[i * 3] = p[0] + ccx;
+      CP[i * 3 + 1] = p[1] + ccy;
       CP[i * 3 + 2] = p[2];
       CV[i * 3] = omega[1] * p[2] - omega[2] * p[1];
       CV[i * 3 + 1] = omega[2] * p[0] - omega[0] * p[2];
@@ -1083,7 +1213,9 @@ export function mountBlackboxHero(root, options = {}) {
     gl.bindFramebuffer(gl.FRAMEBUFFER, target ? target.fbo : null);
     gl.viewport(0, 0, target ? target.w : canvas.width, target ? target.h : canvas.height);
     const u = prog.u;
+    const [ccx, ccy] = cubeCenter();
     gl.uniform2f(u.uAspect, G, 1);
+    gl.uniform2f(u.uCubePos, ccx, ccy);
     gl.uniform1f(u.uTime, simT);
     gl.uniform1f(u.uSeed, cfg.seed);
     gl.uniform1f(u.uCube, s);
@@ -1105,7 +1237,9 @@ export function mountBlackboxHero(root, options = {}) {
     gl.uniform1f(u.uPulseLife, cfg.pulseLife);
   };
   const logoBox = () => {
-    const lw = cfg.logoWidth * G;
+    // name stays viewport-centered; only the cube moves under drag
+    const stack = !!logoStacked;
+    const lw = (stack ? Math.min(cfg.logoWidth * 1.08, 0.72) : cfg.logoWidth) * G;
     return [G * 0.5, 0.5, lw, (lw * LOGO_H) / LOGO_W];
   };
 
@@ -1358,14 +1492,15 @@ export function mountBlackboxHero(root, options = {}) {
 
     let env = 0;
     for (const pl of pulses) env = Math.max(env, Math.exp(((pl.t0 - simT) * 2.6) / cfg.pulseLife));
+    const [ccx, ccy] = cubeCenter();
     for (let i = 0; i < 8; i++) {
       const el = cornerEls[i];
-      const cx = CP[i * 3] - G * 0.5, cy = CP[i * 3 + 1] - 0.5, cz = CP[i * 3 + 2];
+      const cx = CP[i * 3] - ccx, cy = CP[i * 3 + 1] - ccy, cz = CP[i * 3 + 2];
       const op = env * cfg.hudOpacity * (cz > 0 ? 1 : 0.35);
       el.style.opacity = op.toFixed(3);
       if (op < 0.02) continue;
       const k = cfg.lens / Math.max(cfg.lens - cz, 0.05);
-      const [x, y] = toPx(G * 0.5 + cx * k, 0.5 + cy * k);
+      const [x, y] = toPx(ccx + cx * k, ccy + cy * k);
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) translate(7px, -50%)`;
       el.textContent = `${fmtSigned(cx)} ${fmtSigned(cy)} ${fmtSigned(cz)}`;
     }
@@ -1404,9 +1539,23 @@ export function mountBlackboxHero(root, options = {}) {
       firePulse();
     }
 
+    // coast the cube after a drag-fling
+    if (!ptr.dragging && cubePos && (Math.abs(cubeVel[0]) > 1e-4 || Math.abs(cubeVel[1]) > 1e-4)) {
+      cubePos[0] += cubeVel[0] * dt;
+      cubePos[1] += cubeVel[1] * dt;
+      clampCubePos();
+      const damp = Math.pow(cfg.dragInertia, rdt * 60);
+      cubeVel[0] *= damp;
+      cubeVel[1] *= damp;
+      if (Math.hypot(cubeVel[0], cubeVel[1]) < 0.002) {
+        cubeVel[0] = 0;
+        cubeVel[1] = 0;
+      }
+    }
+
     updateRotation(dt);
     const inCube = ptr.active && hitCube(ptr.x * G, ptr.y);
-    if (inCube && !ptr.wasIn) firePulse();
+    if (inCube && !ptr.wasIn && !ptr.dragging) firePulse();
     ptr.wasIn = inCube;
 
     pulseU.fill(0);
@@ -1439,6 +1588,7 @@ export function mountBlackboxHero(root, options = {}) {
       root.removeEventListener("pointercancel", onUp);
       root.removeEventListener("pointerleave", onLeave);
       window.removeEventListener("scroll", onScroll);
+      setCubeCursor(false, false);
       gl.getExtension("WEBGL_lose_context")?.loseContext();
       root.innerHTML = "";
     },

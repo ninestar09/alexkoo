@@ -12,6 +12,16 @@
   overflow: hidden;
   background: var(--bg);
   touch-action: pan-y;
+  cursor: default;
+}
+
+.bbihero.is-over-cube {
+  cursor: grab;
+}
+
+.bbihero.is-dragging-cube {
+  cursor: grabbing;
+  touch-action: none;
 }
 
 .bbihero,
@@ -43,6 +53,11 @@
   mix-blend-mode: difference;
   pointer-events: none;
   z-index: 5;
+}
+
+.bbihero.is-stacked-logo .bbih-logo {
+  /* give two-line mobile titles a bit more presence */
+  max-width: 78vw;
 }
 
 .bbihero .bbih-logo svg {
