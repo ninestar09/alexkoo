@@ -576,12 +576,21 @@ function ensureFont(href) {
 const escapeXml = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
 
+const hasSubtitle = (cfg) =>
+  (Array.isArray(cfg.subtitleLines) && cfg.subtitleLines.length > 0) || !!cfg.subtitle;
+
+// Logo frame is LOGO_W:LOGO_H; on narrow screens with a subtitle, use more width so the lines stay legible
+function logoWidthFrac(cfg, stacked) {
+  if (!stacked) return cfg.logoWidth;
+  return hasSubtitle(cfg) ? 0.92 : Math.min(cfg.logoWidth * 1.08, 0.72);
+}
+
 function titleLinesFor(cfg, stacked) {
   if (Array.isArray(cfg.titleLines) && cfg.titleLines.length) {
     return cfg.titleLines.map(String);
   }
   const title = String(cfg.title || "");
-  if (!stacked) return [title];
+  if (!stacked || hasSubtitle(cfg)) return [title];
   const parts = title.trim().split(/\s+/).filter(Boolean);
   return parts.length > 1 ? parts : [title];
 }
@@ -599,52 +608,56 @@ async function buildLogo(cfg, stacked = false) {
   mask.height = LOGO_H;
   const ctx = mask.getContext("2d");
   const titleW = LOGO_W * 0.94;
-  const sub = cfg.subtitle ? String(cfg.subtitle) : "";
+  const subLines = Array.isArray(cfg.subtitleLines) && cfg.subtitleLines.length
+    ? cfg.subtitleLines.map(String).filter(Boolean)
+    : cfg.subtitle
+      ? String(cfg.subtitle).split("\n").filter(Boolean)
+      : [];
+  const hasSub = subLines.length > 0;
+  const subScale = subLines.length > 1 ? 0.3 : 0.36;
 
-  // fit each title line, then scale the whole stack into the logo frame
-  let size = 100;
-  ctx.font = font(size);
+  const measure = (txt) => {
+    const m = ctx.measureText(txt);
+    return { text: txt, width: m.width, asc: m.actualBoundingBoxAscent, desc: m.actualBoundingBoxDescent };
+  };
+  const layout = (s) => {
+    const titleGap = s * (lines.length > 1 ? 0.18 : 0);
+    ctx.font = font(s);
+    const title = lines.map(measure);
+    const stack = title.reduce((h, m) => h + m.asc + m.desc, 0) + titleGap * Math.max(0, lines.length - 1);
+    const ss = s * subScale;
+    ctx.font = font(ss);
+    const subs = subLines.map(measure);
+    const subGap = ss * 0.32;
+    const subStack = subs.reduce((h, m) => h + m.asc + m.desc, 0) + subGap * Math.max(0, subs.length - 1);
+    const gap = hasSub ? s * 0.26 : 0;
+    return { s, titleGap, title, stack, ss, subs, subGap, subStack, gap, blockH: stack + gap + subStack };
+  };
+
+  // fit the widest title line, then shrink the whole block into the logo frame
+  ctx.font = font(100);
   const longest = Math.max(...lines.map((ln) => ctx.measureText(ln).width), 1);
-  size = (100 * titleW) / longest;
-  ctx.font = font(size);
-  let metrics = lines.map((ln) => {
-    const m = ctx.measureText(ln);
-    return { text: ln, width: m.width, asc: m.actualBoundingBoxAscent, desc: m.actualBoundingBoxDescent };
-  });
-  const lineGap = size * (lines.length > 1 ? 0.18 : 0);
-  let stackH =
-    metrics.reduce((h, m) => h + m.asc + m.desc, 0) + lineGap * Math.max(0, lines.length - 1);
-  const maxStack = sub ? LOGO_H * 0.55 : LOGO_H * (lines.length > 1 ? 0.78 : 0.6);
-  if (stackH > maxStack) {
-    size *= maxStack / stackH;
-    ctx.font = font(size);
-    metrics = lines.map((ln) => {
-      const m = ctx.measureText(ln);
-      return { text: ln, width: m.width, asc: m.actualBoundingBoxAscent, desc: m.actualBoundingBoxDescent };
-    });
-    stackH =
-      metrics.reduce((h, m) => h + m.asc + m.desc, 0) +
-      size * (lines.length > 1 ? 0.18 : 0) * Math.max(0, lines.length - 1);
-  }
-  const gap = size * 0.3;
-  const subSize = size * 0.36;
-  let subAsc = 0, subDesc = 0, subWidth = 0;
-  if (sub) {
-    ctx.font = font(subSize);
-    const sm = ctx.measureText(sub);
-    subAsc = sm.actualBoundingBoxAscent;
-    subDesc = sm.actualBoundingBoxDescent;
-    subWidth = sm.width;
-  }
-  const blockH = stackH + (sub ? gap + subAsc + subDesc : 0);
-  let y = (LOGO_H - blockH) / 2;
-  const bases = metrics.map((m) => {
+  let L = layout((100 * titleW) / longest);
+  const maxStack = hasSub ? LOGO_H * 0.55 : LOGO_H * (lines.length > 1 ? 0.78 : 0.6);
+  if (L.stack > maxStack) L = layout(L.s * (maxStack / L.stack));
+  const maxBlock = LOGO_H * 0.94;
+  if (L.blockH > maxBlock) L = layout(L.s * (maxBlock / L.blockH));
+  const subWidest = Math.max(0, ...L.subs.map((m) => m.width));
+  if (subWidest > titleW) L = layout(L.s * (titleW / subWidest));
+
+  const size = L.s;
+  let y = (LOGO_H - L.blockH) / 2;
+  const bases = L.title.map((m) => {
     const base = y + m.asc;
-    y += m.asc + m.desc + size * (lines.length > 1 ? 0.18 : 0);
+    y += m.asc + m.desc + L.titleGap;
     return { ...m, base };
   });
-  const baseSub = sub ? y - size * (lines.length > 1 ? 0.18 : 0) + gap + subAsc : 0;
-  const blockWidth = Math.max(...metrics.map((m) => m.width), subWidth);
+  y += L.gap - L.titleGap;
+  const subBases = L.subs.map((m) => {
+    const base = y + m.asc;
+    y += m.asc + m.desc + L.subGap;
+    return { ...m, base };
+  });
 
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, LOGO_W, LOGO_H);
@@ -653,35 +666,17 @@ async function buildLogo(cfg, stacked = false) {
   ctx.textAlign = "center";
   ctx.font = font(size);
   for (const ln of bases) ctx.fillText(ln.text, LOGO_W / 2, ln.base);
-
-  if (sub) {
-    ctx.font = font(subSize);
-    ctx.textAlign = "left";
-    const chars = [...sub];
-    const widths = chars.map((ch) => ctx.measureText(ch).width);
-    const extra = chars.length > 1 ? (blockWidth - widths.reduce((a, b) => a + b, 0)) / (chars.length - 1) : 0;
-    let x = LOGO_W / 2 - blockWidth / 2;
-    chars.forEach((ch, i) => {
-      ctx.fillText(ch, x, baseSub);
-      x += widths[i] + extra;
-    });
-  }
+  ctx.font = font(L.ss);
+  for (const ln of subBases) ctx.fillText(ln.text, LOGO_W / 2, ln.base);
 
   const ff = `&quot;${escapeXml(family)}&quot;, Arial Black, sans-serif`;
-  const svgLines = bases
-    .map(
-      (ln) =>
-        `<text x="${LOGO_W / 2}" y="${ln.base.toFixed(1)}" text-anchor="middle" font-family="${ff}" font-weight="${cfg.fontWeight}" font-size="${size.toFixed(1)}" ` +
-        `textLength="${ln.width.toFixed(1)}" lengthAdjust="spacingAndGlyphs">${escapeXml(ln.text)}</text>`
-    )
-    .join("");
+  const textEl = (ln, s) =>
+    `<text x="${LOGO_W / 2}" y="${ln.base.toFixed(1)}" text-anchor="middle" font-family="${ff}" font-weight="${cfg.fontWeight}" font-size="${s.toFixed(1)}" ` +
+    `textLength="${ln.width.toFixed(1)}" lengthAdjust="spacingAndGlyphs">${escapeXml(ln.text)}</text>`;
   const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LOGO_W} ${LOGO_H}" aria-label="${escapeXml(cfg.title)}">` +
-    svgLines +
-    (sub
-      ? `<text x="${LOGO_W / 2}" y="${baseSub.toFixed(1)}" text-anchor="middle" font-family="${ff}" font-weight="${cfg.fontWeight}" font-size="${subSize.toFixed(1)}" ` +
-        `textLength="${blockWidth.toFixed(1)}" lengthAdjust="spacing">${escapeXml(sub)}</text>`
-      : "") +
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LOGO_W} ${LOGO_H}" aria-label="${escapeXml([cfg.title, ...subLines].join(" "))}">` +
+    bases.map((ln) => textEl(ln, size)).join("") +
+    subBases.map((ln) => textEl(ln, L.ss)).join("") +
     `</svg>`;
 
   return { svg, mask };
@@ -770,6 +765,7 @@ export function mountBlackboxHero(root, options = {}) {
   const refreshLogo = (stacked) => {
     logoStacked = stacked;
     root.classList.toggle("is-stacked-logo", !!stacked);
+    root.classList.toggle("has-logo-sub", hasSubtitle(cfg));
     return buildLogo(cfg, stacked).then(applyLogo);
   };
   // stack the name on mobile / portrait ratios; keep it centered always
@@ -911,7 +907,7 @@ export function mountBlackboxHero(root, options = {}) {
     dots.height = Math.round(cssH * dpr);
     // slightly taller footprint when the name is stacked on two lines
     const stack = isMobile || cssH > cssW * 1.05;
-    logo.style.width = `${(stack ? Math.min(cfg.logoWidth * 1.08, 0.72) : cfg.logoWidth) * cssW}px`;
+    logo.style.width = `${logoWidthFrac(cfg, stack) * cssW}px`;
     if (logoStacked !== stack) refreshLogo(stack);
 
     if (vel) {
@@ -1351,7 +1347,7 @@ export function mountBlackboxHero(root, options = {}) {
   const logoBox = () => {
     // name stays viewport-centered; only the cube moves under drag
     const stack = !!logoStacked;
-    const lw = (stack ? Math.min(cfg.logoWidth * 1.08, 0.72) : cfg.logoWidth) * G;
+    const lw = logoWidthFrac(cfg, stack) * G;
     return [G * 0.5, 0.5, lw, (lw * LOGO_H) / LOGO_W];
   };
 

@@ -60,6 +60,10 @@
   max-width: 78vw;
 }
 
+.bbihero.is-stacked-logo.has-logo-sub .bbih-logo {
+  max-width: 92vw;
+}
+
 .bbihero .bbih-logo svg {
   display: block;
   width: 100%;

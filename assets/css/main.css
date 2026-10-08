@@ -475,8 +475,12 @@ h6 {
   transition: all 0.5s;
   z-index: 997;
   padding: 30px 0;
-  background-color: #000;
-  position: relative;
+  background-color: transparent;
+  /* Keep fixed even if Bootstrap .fixed-top loses the cascade */
+  position: fixed !important;
+  top: 0;
+  right: 0;
+  left: 0;
 }
 
 /* About page only: match header strip to page base (same as body) â€” pill still uses glass on this */
@@ -2152,27 +2156,55 @@ body.page-about #aboutPageInner > .about-orbit-hero {
 }
 
 /*--------------------------------------------------------------
-# Hero Section
+# Intro play (interactive cube, full viewport)
 --------------------------------------------------------------*/
-/* Hero: tall enough to show full 16:9 frame without cropping */
-.hero {
+.intro-play {
+  display: block;
   width: 100%;
-  min-height: 56.25vw; /* 16:9 aspect ratio â€“ full frame visible */
-  background: transparent;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
-  padding: 140px 0 60px 0;
+  background: #050506;
   overflow: hidden;
+  z-index: 1;
+  flex: 0 0 auto;
 }
 
-@media (min-aspect-ratio: 16/9) {
-  .hero {
-    min-height: 100vh;
-  }
+.intro-play[hidden] {
+  display: none !important;
+}
+
+/* Stage is the WebGL mount point — keep section 100vh even after .bbihero styles apply */
+.intro-play__stage,
+.intro-play__stage.bbihero {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  max-height: 100%;
+  background: #050506;
+}
+
+/*--------------------------------------------------------------
+# Hero Section
+--------------------------------------------------------------*/
+/* Contact page head: title + scroll-driven BG frame band */
+.hero {
+  width: 100%;
+  min-height: clamp(280px, 48vh, 520px);
+  background: transparent;
+  position: relative;
+  padding: 96px 0 48px 0;
+  overflow: hidden;
 }
 
 @media (max-width: 767px) {
   .hero {
-    padding-top: 180px;
+    min-height: clamp(240px, 42vh, 420px);
+    padding-top: 88px;
     padding-left: 16px;
     padding-right: 16px;
   }
@@ -2202,17 +2234,26 @@ body.page-about #aboutPageInner > .about-orbit-hero {
   background: #000;
 }
 
-/* Soft blend from header into frame sequence â€“ no hard cutoff */
+/* Soft top fade under fixed header */
 .hero::before {
   content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 140px;
-  background: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.6) 50%, transparent 100%);
+  height: 72px;
+  background: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.55) 45%, transparent 100%);
   z-index: 1;
   pointer-events: none;
+}
+
+.hero-contact-quote {
+  margin: 1.1rem auto 0;
+  max-width: 36rem;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: clamp(0.92rem, 1.6vw, 1.05rem);
+  line-height: 1.55;
+  font-family: var(--font-default, inherit);
 }
 
 .hero-scroll-frames img {
@@ -2231,12 +2272,152 @@ body.page-about #aboutPageInner > .about-orbit-hero {
   z-index: 2;
 }
 
+/* Measurement HUD — sample language from alexintro left/bottom ticks */
+.hero-measure {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  font-family: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, monospace;
+  --hero-measure-ink: rgba(232, 230, 226, 0.28);
+  --hero-measure-dim: #5a5a58;
+  --hero-measure-hot: rgba(232, 230, 226, 0.82);
+}
+
+.hero-measure .hm-rail {
+  position: absolute;
+  pointer-events: auto;
+  cursor: ns-resize;
+}
+
+.hero-measure .hm-rail-v {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 34px;
+}
+
+.hero-measure .hm-rail-h {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 28px;
+  cursor: ew-resize;
+}
+
+.hero-measure .hm-tick {
+  position: absolute;
+  background: var(--hero-measure-ink);
+  transition: background 0.15s ease, width 0.15s ease, height 0.15s ease;
+}
+
+.hero-measure .hm-tick.h {
+  width: 1px;
+  height: 6px;
+  bottom: 0;
+}
+
+.hero-measure .hm-tick.v {
+  height: 1px;
+  width: 6px;
+  left: 0;
+}
+
+.hero-measure .hm-tick.is-major.v {
+  width: 10px;
+}
+
+.hero-measure .hm-tick.is-major.h {
+  height: 10px;
+}
+
+.hero-measure .hm-tick.is-active {
+  background: var(--hero-measure-hot);
+}
+
+.hero-measure .hm-lbl {
+  position: absolute;
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+  font-family: inherit;
+  line-height: 1;
+  color: var(--hero-measure-dim);
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  transition: color 0.15s ease, opacity 0.15s ease;
+  pointer-events: auto;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 6px;
+}
+
+.hero-measure .hm-lbl:hover,
+.hero-measure .hm-lbl.is-active {
+  color: #cfcdd0;
+}
+
+.hero-measure .hm-playhead {
+  position: absolute;
+  left: 0;
+  width: 18px;
+  height: 1px;
+  background: var(--hero-measure-hot);
+  box-shadow: 0 0 10px rgba(232, 230, 226, 0.25);
+  transform: translateY(-50%);
+  transition: top 0.08s linear;
+  pointer-events: none;
+}
+
+.hero-measure .hm-playhead::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #e8e6e2;
+  transform: translate(-20%, -50%);
+}
+
+.hero-measure .hm-readout {
+  position: absolute;
+  left: 22px;
+  bottom: 18px;
+  font-size: 8.5px;
+  letter-spacing: 0.18em;
+  color: var(--hero-measure-dim);
+  white-space: pre;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .hero-measure .hm-lbl {
+    font-size: 7px;
+    padding: 3px 4px;
+  }
+
+  .hero-measure .hm-readout {
+    left: 16px;
+    bottom: 12px;
+  }
+}
+
 .hero h2 {
   margin: 0 0 10px 0;
   font-size: 38px;
   font-weight: 400;
   color: #fff;
   font-family: var(--font-header);
+}
+
+.hero h2 .hero-title-line {
+  display: block;
 }
 
 .hero h2 .hero-title-wt {
@@ -2295,7 +2476,7 @@ body.page-about #aboutPageInner > .about-orbit-hero {
   font-size: 18px;
 }
 
-/* Intro text between hero CTA and gallery â€“ match hero black so no band */
+/* Intro text between play intro and gallery — match black so no band */
 .hero-intro {
   padding: clamp(56px, 7vw, 96px) 0 clamp(64px, 8vw, 112px);
   background-color: #000;

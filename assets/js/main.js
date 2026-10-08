@@ -7,6 +7,110 @@
 document.addEventListener('DOMContentLoaded', () => {
   "use strict";
 
+  // Prevent browser from restoring a mid-page scroll (hides #intro-play under the fold)
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+
+  /** Resolve intro-play module URL from this script (classic `import('./x')` is doc-relative and 404s). */
+  const ASSET_VERSION = 'intro4';
+  function introPlayModuleUrl() {
+    const existing = document.querySelector('script[type="module"][src*="intro-play-mount.js"]');
+    if (existing) return existing.src;
+    const scripts = document.querySelectorAll('script[src]');
+    for (let i = 0; i < scripts.length; i++) {
+      const src = scripts[i].getAttribute('src') || '';
+      if (/main\.js(\?|#|$)/.test(src)) {
+        return new URL('intro-play-mount.js?v=' + ASSET_VERSION, scripts[i].src).href;
+      }
+    }
+    return new URL('assets/js/intro-play-mount.js?v=' + ASSET_VERSION, window.location.href).href;
+  }
+
+  /** Lazy-load intro-play mount (defined early so Home/boot never hit a TDZ). */
+  let introPlayMountPromise = null;
+  function loadIntroPlayMount() {
+    if (window.AlexIntroPlay) return Promise.resolve(window.AlexIntroPlay);
+    if (!introPlayMountPromise) {
+      introPlayMountPromise = import(introPlayModuleUrl()).catch((err) => {
+        console.warn('[intro-play] module load failed', err);
+        introPlayMountPromise = null;
+        return null;
+      });
+    }
+    return introPlayMountPromise.then((mod) => window.AlexIntroPlay || mod);
+  }
+
+  function pinIntroPlayToTop() {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }
+
+  function ensureIntroPlayShell() {
+    let el = document.getElementById('intro-play');
+    if (el) return el;
+    el = document.createElement('section');
+    el.id = 'intro-play';
+    el.className = 'intro-play';
+    el.setAttribute('aria-label', 'Interactive cube intro');
+    el.innerHTML = '<div id="intro-play-stage" class="intro-play__stage"></div>';
+    const app = document.getElementById('app-content');
+    if (app) app.insertBefore(el, app.firstChild);
+    else document.body.insertBefore(el, document.body.firstChild);
+    return el;
+  }
+
+  let introPlayBootTimers = [];
+  function clearIntroPlayBootTimers() {
+    while (introPlayBootTimers.length) {
+      window.clearTimeout(introPlayBootTimers.pop());
+    }
+  }
+
+  function isHomePage() {
+    if (document.body.classList.contains('page-home')) return true;
+    return pageBasename(window.location.pathname) === 'index.html';
+  }
+
+  /** Play intro on Home only. */
+  function syncIntroPlayForHome(isHome) {
+    if (!isHome) {
+      clearIntroPlayBootTimers();
+      document.body.classList.remove('page-home');
+      try { window.AlexIntroPlay?.disposeIntroPlay?.(); } catch (_) {}
+      const el = document.getElementById('intro-play');
+      if (el) el.remove();
+      return Promise.resolve(null);
+    }
+    document.body.classList.add('page-home');
+    ensureIntroPlayShell();
+    pinIntroPlayToTop();
+    return ensureIntroPlayReady({ force: true });
+  }
+
+  /** Mount/repair play intro if #intro-play is in the DOM. */
+  function ensureIntroPlayReady(opts) {
+    const force = !!(opts && opts.force);
+    if (!isHomePage()) return Promise.resolve(null);
+    const el = ensureIntroPlayShell();
+    if (!el) return Promise.resolve(null);
+    el.hidden = false;
+    el.removeAttribute('hidden');
+    pinIntroPlayToTop();
+    const run = (api) => {
+      if (!api) return null;
+      try {
+        if (force) return api.mountIntroPlay?.(true) ?? null;
+        return api.ensureIntroPlay?.() ?? api.mountIntroPlay?.(false) ?? null;
+      } catch (_) {
+        return null;
+      }
+    };
+    if (window.AlexIntroPlay) return Promise.resolve(run(window.AlexIntroPlay));
+    return loadIntroPlayMount().then(run);
+  }
+
   /**
    * Preloader — must never block clicks indefinitely (z-index 99999).
    * Rare edge: `load` already fired before this listener runs, or a hung asset delays `load` on slow/CDN paths.
@@ -98,6 +202,102 @@ document.addEventListener('DOMContentLoaded', () => {
     }, PAGE_TX_MS);
   }
 
+  /** Always hard-load Home so the WebGL intro boots like a refresh (SPA remount is unreliable). */
+  function navigateHomeHard(e) {
+    if (e) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+    }
+    const u = new URL('index.html', window.location.href);
+    u.search = '';
+    u.hash = '';
+    // Cache-bust so the document + modules boot the same way as a manual refresh
+    u.searchParams.set('_home', String(Date.now()));
+    window.location.assign(u.toString());
+  }
+
+  function pageBasename(pathOrHref) {
+    try {
+      const u = new URL(pathOrHref, window.location.href);
+      let p = u.pathname || '';
+      if (p.endsWith('/')) p += 'index.html';
+      const name = p.split('/').pop() || 'index.html';
+      return name;
+    } catch (_) {
+      const raw = String(pathOrHref || '').split('?')[0].split('#')[0];
+      if (!raw || raw === '/' || raw.endsWith('/')) return 'index.html';
+      return raw.split('/').pop() || 'index.html';
+    }
+  }
+
+  /** Capture-phase: Home hard-loads; leaving Home also full-loads so play intro never sticks. */
+  document.addEventListener('click', (e) => {
+    if (e.button !== 0) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+    if (!a) return;
+    if (a.getAttribute('target') === '_blank') return;
+    const href = a.getAttribute('href');
+    if (!href || href.startsWith('#') || href.startsWith('mailto:') || href.startsWith('tel:')) return;
+    let dest;
+    try {
+      dest = new URL(href, window.location.href);
+      if (dest.origin !== window.location.origin) return;
+    } catch (_) {
+      return;
+    }
+    const nextName = pageBasename(dest.pathname);
+    const curName = pageBasename(window.location.pathname);
+    const spaPages = ['index.html', 'about.html', 'contact.html', 'interactive3d.html'];
+    if (!spaPages.includes(nextName)) return;
+
+    // Home links (ignore index.html#gallery deep links)
+    if (nextName === 'index.html') {
+      if (dest.hash && dest.hash !== '#intro-play' && dest.hash !== '#') return;
+      navigateHomeHard(e);
+      return;
+    }
+
+    // Leaving Home → full load of About/Contact/3D (drops play intro with the document)
+    if (curName === 'index.html') {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      syncIntroPlayForHome(false);
+      pageTxNavigateFull(dest);
+    }
+  }, true);
+
+  // Boot play intro on Home only
+  {
+    try {
+      const u = new URL(window.location.href);
+      if (u.searchParams.has('_home')) {
+        u.searchParams.delete('_home');
+        window.history.replaceState({}, '', u.pathname + u.search + u.hash);
+      }
+    } catch (_) {}
+
+    if (isHomePage()) {
+      syncIntroPlayForHome(true);
+      window.addEventListener('load', () => {
+        if (isHomePage()) ensureIntroPlayReady({ force: true });
+      });
+      introPlayBootTimers.push(window.setTimeout(() => {
+        if (isHomePage()) ensureIntroPlayReady({ force: true });
+      }, 250));
+    } else {
+      syncIntroPlayForHome(false);
+    }
+
+    window.addEventListener('pageshow', (ev) => {
+      if (!isHomePage()) {
+        syncIntroPlayForHome(false);
+        return;
+      }
+      ensureIntroPlayReady({ force: !!ev.persisted });
+    });
+  }
+
   function initPageLineTransition() {
     ensurePageTransitionOverlay();
 
@@ -163,6 +363,11 @@ document.addEventListener('DOMContentLoaded', () => {
   function scrollToLocationHash(options) {
     const hash = window.location.hash;
     if (!hash || hash.length < 2) return;
+    // Intro is the page top — never offset-scroll it under the fold
+    if (hash === '#intro-play') {
+      pinIntroPlayToTop();
+      return;
+    }
     const target = document.querySelector(hash);
     if (!target) return;
     const { smooth = true, delay = 0, duration = 1500 } = options || {};
@@ -241,7 +446,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /**
    * Hero scroll-driven frame animation (90 frames, 16:9).
-   * First ~50 scroll units don’t move the page – they only drive the sequence; then page scrolls.
+   * When the hero section reaches the top of the viewport (after #intro-play),
+   * the first stretch of wheel input drives the frame sequence; then page scrolls.
    * Must be re-inited after SPA swaps #app-content (old window listeners targeted removed nodes).
    */
   let heroScrollAbort = null;
@@ -273,6 +479,94 @@ document.addEventListener('DOMContentLoaded', () => {
     let virtualScroll = 0;
     let hasReachedEnd = false;
     let maxProgressReached = 0;
+    let currentProgress = 0;
+
+    const measureRoot = document.getElementById('heroMeasure');
+    const vTicks = [];
+    let playhead = null;
+
+    function buildHeroMeasure() {
+      if (!measureRoot) return;
+      measureRoot.innerHTML = '';
+      vTicks.length = 0;
+
+      const railV = document.createElement('div');
+      railV.className = 'hm-rail hm-rail-v';
+      railV.setAttribute('aria-hidden', 'true');
+      measureRoot.appendChild(railV);
+
+      for (let i = 1; i <= 9; i++) {
+        const f = i / 10;
+        const major = i % 2 === 0;
+
+        const v = document.createElement('div');
+        v.className = 'hm-tick v' + (major ? ' is-major' : '');
+        v.style.top = `${f * 100}%`;
+        v.dataset.t = String(f);
+        measureRoot.appendChild(v);
+        vTicks.push(v);
+
+        if (major) {
+          const vl = document.createElement('button');
+          vl.type = 'button';
+          vl.className = 'hm-lbl';
+          vl.textContent = `.${10 - i}`;
+          vl.style.top = `${f * 100}%`;
+          vl.style.left = '8px';
+          vl.style.transform = 'translateY(-50%)';
+          // left rail maps top→.9 … bottom→.1 like alexintro; scrub uses top-origin progress
+          vl.dataset.t = String(f);
+          vl.setAttribute('aria-label', `Jump to scroll ${f.toFixed(1)}`);
+          measureRoot.appendChild(vl);
+        }
+      }
+
+      playhead = document.createElement('div');
+      playhead.className = 'hm-playhead';
+      playhead.style.top = '0%';
+      measureRoot.appendChild(playhead);
+
+      measureRoot.addEventListener('click', (e) => {
+        const btn = e.target.closest('.hm-lbl');
+        if (!btn || !measureRoot.contains(btn)) return;
+        const t = parseFloat(btn.dataset.t || '0');
+        if (!Number.isFinite(t)) return;
+        scrubToProgress(t);
+      }, { signal });
+    }
+
+    function updateHeroMeasure(progress) {
+      if (!measureRoot) return;
+      const p = Math.min(1, Math.max(0, progress));
+      if (playhead) playhead.style.top = `${(p * 100).toFixed(2)}%`;
+
+      const nearest = Math.round(p * 10) / 10;
+      measureRoot.querySelectorAll('.hm-tick, .hm-lbl').forEach((el) => {
+        const t = parseFloat(el.dataset.t || '-1');
+        el.classList.toggle('is-active', Math.abs(t - nearest) < 0.051);
+      });
+    }
+
+    function heroDocTop() {
+      return heroSection.getBoundingClientRect().top + window.scrollY;
+    }
+
+    function scrollPastHeroPin() {
+      return window.scrollY - heroDocTop();
+    }
+
+    function isHeroPinned() {
+      const top = heroSection.getBoundingClientRect().top;
+      return top <= 2 && top >= -2;
+    }
+
+    function pinHeroIfNeeded() {
+      const top = heroSection.getBoundingClientRect().top;
+      if (top > 2) {
+        const y = heroDocTop();
+        window.scrollTo({ top: y, behavior: 'auto' });
+      }
+    }
 
     function updateHeroTitleGradient(progress) {
       const p = Math.min(1, Math.max(0, progress));
@@ -292,20 +586,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function setFrameFromProgress(progress) {
       const p = Math.min(1, Math.max(0, progress));
+      currentProgress = p;
       const frameIndex = Math.min(TOTAL_FRAMES - 1, Math.floor(p * TOTAL_FRAMES));
       const num = String(frameIndex + 1).padStart(3, '0');
       heroScrollFrameEl.src = FRAME_PATH + num + '.' + FRAME_EXT;
       updateHeroTitleGradient(p);
+      updateHeroMeasure(p);
+    }
+
+    function scrubToProgress(t) {
+      const p = Math.min(1, Math.max(0, t));
+      pinHeroIfNeeded();
+      virtualScroll = p * ANIMATION_SCROLL_RANGE;
+      maxProgressReached = p;
+      hasReachedEnd = p >= 0.999;
+      setFrameFromProgress(p);
     }
 
     function updateHeroScrollFrame() {
-      const scrollY = window.scrollY;
+      const past = scrollPastHeroPin();
       const scrollRange = Math.max(1, heroSection.offsetHeight || window.innerHeight);
 
-      if (scrollY <= 0) {
+      // Still in the intro-play section above the hero
+      if (past < -1) {
         hasReachedEnd = false;
         maxProgressReached = 0;
-        virtualScroll = Math.min(virtualScroll, ANIMATION_SCROLL_RANGE);
+        setFrameFromProgress(0);
+        return;
+      }
+
+      // Pinned at hero top — virtual wheel scroll drives frames
+      if (past <= 0) {
+        hasReachedEnd = false;
+        maxProgressReached = Math.max(maxProgressReached, virtualScroll / ANIMATION_SCROLL_RANGE);
         setFrameFromProgress(virtualScroll / ANIMATION_SCROLL_RANGE);
         return;
       }
@@ -317,43 +630,80 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const effectiveRange = scrollRange / SCROLL_SPEED_MULTIPLIER;
 
-      if (scrollY >= effectiveRange) {
+      if (past >= effectiveRange) {
         hasReachedEnd = true;
         maxProgressReached = 1;
         setFrameFromProgress(1);
         return;
       }
 
-      const progress = scrollY / effectiveRange;
+      const progress = past / effectiveRange;
       maxProgressReached = Math.max(maxProgressReached, progress);
       virtualScroll = ANIMATION_SCROLL_RANGE;
       setFrameFromProgress(maxProgressReached);
     }
 
-    /* Wheel at top: first ANIMATION_SCROLL_RANGE only drives frames, no page scroll */
+    /* When hero is pinned under the header, first ANIMATION_SCROLL_RANGE only drives frames */
     heroSection.addEventListener('wheel', (e) => {
-      if (window.scrollY > 0) return;
+      if (!isHeroPinned() && heroSection.getBoundingClientRect().top > 2) return;
+
+      const top = heroSection.getBoundingClientRect().top;
+      // Hero not yet at top (still scrolling through intro)
+      if (top > 2) return;
+
       const wheelStep = Math.abs(e.deltaY) * FRAME_SCROLL_SPEED;
       if (e.deltaY > 0) {
-        if (virtualScroll < ANIMATION_SCROLL_RANGE) {
+        if (virtualScroll < ANIMATION_SCROLL_RANGE && top >= -2) {
           e.preventDefault();
           virtualScroll = Math.min(ANIMATION_SCROLL_RANGE, virtualScroll + wheelStep);
           updateHeroScrollFrame();
         }
       } else {
-        if (virtualScroll > 0) {
+        if (virtualScroll > 0 && scrollPastHeroPin() <= 0) {
           e.preventDefault();
           virtualScroll = Math.max(0, virtualScroll - wheelStep);
+          hasReachedEnd = false;
           updateHeroScrollFrame();
         }
       }
     }, { passive: false, signal });
 
+    // Drag left/bottom rails to scrub frame progress
+    if (measureRoot) {
+      let dragging = false;
+      let dragAxis = 'y';
+      const scrubFromPointer = (e) => {
+        const rect = measureRoot.getBoundingClientRect();
+        if (dragAxis === 'x') {
+          scrubToProgress((e.clientX - rect.left) / Math.max(1, rect.width));
+        } else {
+          scrubToProgress((e.clientY - rect.top) / Math.max(1, rect.height));
+        }
+      };
+      measureRoot.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.hm-lbl')) return;
+        const rail = e.target.closest('.hm-rail');
+        if (!rail) return;
+        dragging = true;
+        dragAxis = rail.classList.contains('hm-rail-h') ? 'x' : 'y';
+        measureRoot.setPointerCapture?.(e.pointerId);
+        scrubFromPointer(e);
+        e.preventDefault();
+      }, { signal });
+      measureRoot.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        scrubFromPointer(e);
+      }, { signal });
+      const endDrag = () => { dragging = false; };
+      measureRoot.addEventListener('pointerup', endDrag, { signal });
+      measureRoot.addEventListener('pointercancel', endDrag, { signal });
+    }
+
     let heroTicking = false;
     window.addEventListener('scroll', () => {
       if (!heroTicking) {
         requestAnimationFrame(() => {
-          if (window.scrollY === 0) {
+          if (scrollPastHeroPin() <= 0) {
             virtualScroll = Math.min(virtualScroll, ANIMATION_SCROLL_RANGE);
           } else {
             virtualScroll = ANIMATION_SCROLL_RANGE;
@@ -366,6 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, { passive: true, signal });
 
     window.addEventListener('resize', function() { updateHeroScrollFrame(); }, { signal });
+    buildHeroMeasure();
     updateHeroScrollFrame();
   }
 
@@ -1044,6 +1395,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Preload mount module only on Home
+  if (pageBasename(window.location.pathname) === 'index.html') {
+    loadIntroPlayMount();
+  }
+
   function loadPage(href, pushState = true) {
     if (!appContent) return;
     const url = new URL(href, window.location.href);
@@ -1053,10 +1409,17 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    const nextBase = path.replace(/^.*\//, '') || 'index.html';
+    // Never SPA into Home — full document load is required for a reliable WebGL intro
+    if (nextBase === 'index.html') {
+      navigateHomeHard();
+      return;
+    }
+
     const doFetch = () => {
       fetch(url.href, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
         .then(r => { if (!r.ok) throw new Error(r.status); return r.text(); })
-        .then(html => {
+        .then(async (html) => {
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, 'text/html');
           const newContent = doc.getElementById('app-content');
@@ -1069,17 +1432,17 @@ document.addEventListener('DOMContentLoaded', () => {
           disposeHeroIntroCubes();
           disposeSpatialMaker();
           disposeGalleryDetailNest();
+          await syncIntroPlayForHome(false);
           syncPageScopedStyles(doc);
           syncSpatialMakerHead(doc);
           appContent.innerHTML = newContent.innerHTML;
           if (doc.title) document.title = doc.title;
           setActiveNav(href);
-          const pageBasename = path.replace(/^.*\//, '') || 'index.html';
           if (path.includes('interactive3d')) document.body.classList.add('page-interactive3d');
           else document.body.classList.remove('page-interactive3d');
-          if (pageBasename === 'about.html') document.body.classList.add('page-about');
+          if (nextBase === 'about.html') document.body.classList.add('page-about');
           else document.body.classList.remove('page-about');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.scrollTo(0, 0);
           if (pushState) history.pushState({ path: href }, '', href);
           if (typeof AOS !== 'undefined') AOS.refresh();
           initHeroScrollFrames();
@@ -1089,6 +1452,10 @@ document.addEventListener('DOMContentLoaded', () => {
           initGalleryAurora();
           initAboutFadeUpObserver();
           initSpatialMaker();
+          if (document.getElementById('intro-play')) {
+            document.body.classList.add('page-home');
+            requestAnimationFrame(() => ensureIntroPlayReady({ force: true }));
+          }
           pageTxPlayEnter();
         })
         .catch(() => {
@@ -1109,11 +1476,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isSpaPage(getPath(href))) return;
         const curName = getPath(window.location.pathname).replace(/^.*\//, '') || 'index.html';
         const nextName = getPath(href).replace(/^.*\//, '') || 'index.html';
-        if (curName === nextName) return;
+        if (curName === nextName) {
+          // Same page: Home still full-reloads so the WebGL intro always boots
+          if (nextName === 'index.html') {
+            navigateHomeHard(e);
+          }
+          return;
+        }
         e.preventDefault();
         this.classList.add('active');
         document.querySelectorAll('.navbar-pill a.active').forEach(a => { if (a !== this) a.classList.remove('active'); });
         if (window.positionPillIndicator) window.positionPillIndicator(this);
+        // Home includes WebGL intro — full reload boots it cleanly (avoids blank/flashy SPA remounts)
+        if (nextName === 'index.html') {
+          navigateHomeHard(e);
+          return;
+        }
+        // Leaving Home must full-load so #intro-play (outside #app-content) is gone
+        if (curName === 'index.html') {
+          syncIntroPlayForHome(false);
+          pageTxNavigateFull(new URL(href, window.location.href));
+          return;
+        }
         loadPage(new URL(href, window.location.href).href);
       });
     });
@@ -1122,17 +1506,18 @@ document.addEventListener('DOMContentLoaded', () => {
       const pathNow = getPath(window.location.pathname);
       const nameNow = pathNow.replace(/^.*\//, '') || 'index.html';
 
+      // Back/forward to Home always full-reloads so the play intro boots
+      if (nameNow === 'index.html' && !window.location.hash) {
+        window.location.reload();
+        return;
+      }
+
       if (e.state && e.state.galleryNest && isGalleryDetailPath(pathNow)) {
         if (document.getElementById('gallery-detail-nest')) {
           openGalleryDetailNest(window.location.href, { pushHistory: false });
           return;
         }
-        loadPage(new URL('index.html', window.location.href).href, false);
-        window.setTimeout(() => {
-          if (document.getElementById('gallery-detail-nest')) {
-            openGalleryDetailNest(window.location.href, { pushHistory: false });
-          }
-        }, 900);
+        navigateHomeHard();
         return;
       }
 
