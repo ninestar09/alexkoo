@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>Spatial Sound Sculpture — test</title>
+  <link href="assets/img/favicon.png" rel="icon">
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --red: #ff3a2a;
+      --red-dim: rgba(255, 58, 42, 0.45);
+      --red-faint: rgba(255, 58, 42, 0.14);
+      --ink: #f4d9d4;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      height: 100%;
+      overflow: hidden;
+      background: #050203;
+      color: var(--ink);
+      font-family: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, monospace;
+    }
+    #sm-stage { position: fixed; inset: 0; }
+    #sm-stage canvas { display: block; }
+
+    .sm-title {
+      position: fixed;
+      top: 16px;
+      left: 18px;
+      z-index: 5;
+      pointer-events: none;
+      letter-spacing: 0.18em;
+      font-size: 11px;
+      color: var(--red);
+      text-transform: uppercase;
+    }
+    .sm-title small {
+      display: block;
+      margin-top: 6px;
+      letter-spacing: 0.06em;
+      text-transform: none;
+      color: var(--red-dim);
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    .sm-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 16px;
+      transform: translateX(-50%);
+      z-index: 5;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 10px 14px;
+      width: min(1100px, calc(100vw - 24px));
+      padding: 10px 14px;
+      border: 1px solid var(--red-faint);
+      background: rgba(10, 3, 3, 0.72);
+      backdrop-filter: blur(6px);
+    }
+    .sm-group { display: flex; align-items: center; gap: 6px; }
+    .sm-group > span {
+      font-size: 9px;
+      letter-spacing: 0.16em;
+      color: var(--red-dim);
+      text-transform: uppercase;
+      margin-right: 2px;
+    }
+    .sm-btn {
+      appearance: none;
+      background: transparent;
+      border: 1px solid var(--red-dim);
+      color: var(--ink);
+      font: inherit;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .sm-btn:hover { border-color: var(--red); }
+    .sm-btn.is-on {
+      background: var(--red);
+      border-color: var(--red);
+      color: #140404;
+    }
+    .sm-bpm { min-width: 52px; text-align: center; font-size: 11px; }
+    .sm-range { accent-color: var(--red); width: 90px; }
+
+    #VRButton {
+      position: static !important;
+      left: auto !important;
+      bottom: auto !important;
+      width: auto !important;
+      padding: 8px 14px !important;
+      border: 1px solid var(--red) !important;
+      border-radius: 0 !important;
+      background: rgba(10, 3, 3, 0.8) !important;
+      color: var(--ink) !important;
+      font: 10px ui-monospace, "Cascadia Mono", Menlo, monospace !important;
+      letter-spacing: 0.14em !important;
+      opacity: 1 !important;
+    }
+    .sm-xr { position: fixed; top: 14px; right: 16px; z-index: 6; }
+
+    .sm-start {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      background: rgba(5, 2, 3, 0.86);
+      cursor: pointer;
+      text-align: center;
+    }
+    .sm-start[hidden] { display: none; }
+    .sm-start h1 {
+      margin: 0 0 14px;
+      font-size: clamp(18px, 3vw, 28px);
+      letter-spacing: 0.3em;
+      color: var(--red);
+      font-weight: 600;
+    }
+    .sm-start p {
+      margin: 6px 0;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      color: var(--red-dim);
+    }
+    .sm-start .sm-go {
+      display: inline-block;
+      margin-top: 18px;
+      padding: 10px 22px;
+      border: 1px solid var(--red);
+      letter-spacing: 0.24em;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div id="sm-stage"></div>
+
+  <div class="sm-title">
+    Spatial Sound Sculpture — test
+    <small>
+      Keys 1–8 · Q–I · A–K · Z–, play the four rows of the current bank<br>
+      [ ] switch bank · / switch style · space play/pause · ↑↓ tempo · drag to orbit
+    </small>
+  </div>
+
+  <div class="sm-xr" id="smXr"></div>
+
+  <div class="sm-bar" role="toolbar" aria-label="Sculpture controls">
+    <div class="sm-group">
+      <span>View</span>
+      <button class="sm-btn" type="button" data-view="top">Top</button>
+      <button class="sm-btn is-on" type="button" data-view="orbit">Orbit</button>
+    </div>
+    <div class="sm-group">
+      <span>Style</span>
+      <button class="sm-btn is-on" type="button" data-style="slices">Slices</button>
+      <button class="sm-btn" type="button" data-style="rings">Rings</button>
+      <button class="sm-btn" type="button" data-style="helix">Helix</button>
+    </div>
+    <div class="sm-group">
+      <span>Bank</span>
+      <button class="sm-btn is-on" type="button" data-bank="0">Gamelan</button>
+      <button class="sm-btn" type="button" data-bank="1">Ambient</button>
+      <button class="sm-btn" type="button" data-bank="2">Acid</button>
+      <button class="sm-btn" type="button" data-bank="3">World</button>
+    </div>
+    <div class="sm-group">
+      <button class="sm-btn is-on" type="button" id="smPlay">Pause</button>
+      <button class="sm-btn is-on" type="button" id="smRec">● Rec</button>
+      <button class="sm-btn" type="button" id="smClear">Clear</button>
+    </div>
+    <div class="sm-group">
+      <span>Auto-play</span>
+      <button class="sm-btn" type="button" data-genre="gamelan">Gamelan</button>
+      <button class="sm-btn" type="button" data-genre="medieval">Medieval</button>
+      <button class="sm-btn" type="button" data-genre="footwork">Footwork</button>
+      <button class="sm-btn" type="button" data-genre="jazzfunk">Jazz-funk</button>
+      <button class="sm-btn" type="button" data-genre="ambient">Ambient</button>
+      <button class="sm-btn" type="button" data-genre="acid">Acid</button>
+    </div>
+    <div class="sm-group">
+      <span>BPM</span>
+      <button class="sm-btn" type="button" id="smBpmDown" aria-label="Slower">−</button>
+      <div class="sm-bpm" id="smBpm">116</div>
+      <button class="sm-btn" type="button" id="smBpmUp" aria-label="Faster">+</button>
+    </div>
+    <div class="sm-group">
+      <span>Spread</span>
+      <input class="sm-range" type="range" id="smSpread" min="0.03" max="0.16" step="0.005" value="0.085">
+      <span>Twist</span>
+      <input class="sm-range" type="range" id="smTwist" min="-0.2" max="0.2" step="0.005" value="0">
+    </div>
+  </div>
+
+  <div class="sm-start" id="smStart">
+    <div>
+      <h1>SPATIAL SOUND SCULPTURE</h1>
+      <p>Every sound you trigger becomes a shape on a slice of time.</p>
+      <p>Best with headphones. In a WebXR headset, use Enter VR and play the pads with your hands.</p>
+      <div class="sm-go">Click to start</div>
+    </div>
+  </div>
+
+  <script type="module" src="assets/js/spatial-music.js?v=7"></script>
+</body>
+</html>
