@@ -1,8 +1,9 @@
 /**
  * Spatial Sound Sculpture (test page).
- * A 4×8 pad console plays synth voices from one of several banks; each note becomes
+ * Four 4×8 keyboards stay visible at once, surrounding the sculpture. Each note becomes
  * a line shape on one of 16 stacked "time slices". The slices loop as a step sequencer,
- * so the shapes accumulate into a sculpture. Visual styles change the layout of the stack.
+ * so the shapes accumulate into a sculpture. Visual styles change both the stack and
+ * where the keyboards sit: the four sides of a slab, a ring, or a rising helix.
  * Desktop: keyboard + mouse. WebXR: controllers or hands.
  */
 import * as THREE from 'three';
@@ -720,7 +721,7 @@ stage.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 50);
-camera.position.set(1.1, 1.2, 2.05);
+camera.position.set(1.55, 1.85, 2.35);
 
 const rig = new THREE.Group();
 scene.add(rig);
@@ -842,12 +843,12 @@ floor.material.transparent = true;
 floor.material.opacity = 0.35;
 rig.add(floor);
 
-/* Console of pads */
+/* Four keyboards — one per bank — ring the sculpture. The inner edge of each
+   faces the center, so every pad points inward at the layer being built. */
 const PAD = 0.07;
 const PAD_PITCH = 0.086;
-const consoleGroup = new THREE.Group();
-consoleGroup.position.set(0, 0, 0.62);
-rig.add(consoleGroup);
+const CONSOLE_HALF_W = (COLS * PAD_PITCH) / 2;
+const CONSOLE_HALF_D = (ROWS * PAD_PITCH) / 2;
 
 function rectLoop(w, d, color, opacity) {
   return new THREE.LineLoop(
@@ -855,12 +856,6 @@ function rectLoop(w, d, color, opacity) {
     lineMat(color, opacity)
   );
 }
-
-const innerFrame = rectLoop(COLS * PAD_PITCH + 0.05, ROWS * PAD_PITCH + 0.05, theme.frame, 0.55);
-consoleGroup.add(innerFrame);
-const outerFrame = rectLoop(COLS * PAD_PITCH + 0.25, ROWS * PAD_PITCH + 0.14, theme.frame, 0.18);
-outerFrame.position.y = -0.008;
-consoleGroup.add(outerFrame);
 
 function textTexture(text, w, h, font) {
   const c = document.createElement('canvas');
@@ -881,84 +876,95 @@ const padBoxGeo = new THREE.BoxGeometry(PAD, 0.012, PAD);
 const padEdgeGeo = new THREE.EdgesGeometry(padBoxGeo);
 const labelGeo = new THREE.PlaneGeometry(0.024, 0.024);
 const labelMats = [];
-
-const pads = [];
 const hitMeshes = [];
-for (let r = 0; r < ROWS; r++) {
-  for (let c = 0; c < COLS; c++) {
-    const index = r * COLS + c;
-    const g = new THREE.Group();
-    g.position.set((c - (COLS - 1) / 2) * PAD_PITCH, 0, (r - (ROWS - 1) / 2) * PAD_PITCH);
-    const base = new THREE.Mesh(padBoxGeo, new THREE.MeshBasicMaterial({ color: theme.padBase }));
-    base.userData = { pad: index, hx: PAD / 2, hz: PAD / 2 };
-    g.add(base);
-    const edges = new THREE.LineSegments(padEdgeGeo, lineMat(theme.rows[r], 0.5));
-    g.add(edges);
-    const labelMat = new THREE.MeshBasicMaterial({
-      map: textTexture(KEY_LABELS[r][c], 64, 64, '600 40px ui-monospace, Menlo, monospace'),
-      color: theme.ui,
-      transparent: true,
-      depthWrite: false,
-    });
-    labelMats.push(labelMat);
-    const label = new THREE.Mesh(labelGeo, labelMat);
-    label.rotation.x = -Math.PI / 2;
-    label.position.set(-PAD / 2 + 0.014, 0.0066, PAD / 2 - 0.014);
-    g.add(label);
-    consoleGroup.add(g);
-    pads.push({ group: g, base, edges, icon: null, row: r, flash: 0 });
-    hitMeshes.push(base);
-  }
-}
+const consoles = [];
 
-/* Bank arrows on either side of the console (usable by mouse, controller and hand) */
-const arrowGeo = new THREE.BoxGeometry(0.05, 0.012, ROWS * PAD_PITCH * 0.7);
-const arrowEdgeGeo = new THREE.EdgesGeometry(arrowGeo);
-const arrows = [-1, 1].map((dir) => {
-  const g = new THREE.Group();
-  g.position.set(dir * (COLS * PAD_PITCH / 2 + 0.06), 0, 0);
-  const base = new THREE.Mesh(arrowGeo, new THREE.MeshBasicMaterial({ color: theme.padBase }));
-  base.userData = { action: dir < 0 ? 'bankPrev' : 'bankNext', hx: 0.025, hz: ROWS * PAD_PITCH * 0.35 };
-  const edges = new THREE.LineSegments(arrowEdgeGeo, lineMat(theme.frame, 0.45));
-  const icon = new THREE.LineSegments(dir < 0 ? SHAPES.arrowL : SHAPES.arrowR, lineMat(theme.frame, 0.85));
-  icon.scale.setScalar(0.014);
-  icon.position.y = 0.0065;
-  g.add(base, edges, icon);
-  consoleGroup.add(g);
-  hitMeshes.push(base);
-  return { group: g, base, edges, icon, flash: 0 };
-});
+function makeConsole(bankIndex) {
+  const group = new THREE.Group();
+  const bank = BANKS[bankIndex];
+  const inner = rectLoop(COLS * PAD_PITCH + 0.05, ROWS * PAD_PITCH + 0.05, theme.frame, 0.4);
+  const outer = rectLoop(COLS * PAD_PITCH + 0.22, ROWS * PAD_PITCH + 0.12, theme.frame, 0.16);
+  outer.position.y = -0.008;
+  group.add(inner, outer);
 
-/* Bank name plate in front of the console */
-const plateMat = new THREE.MeshBasicMaterial({ color: theme.ui, transparent: true, depthWrite: false });
-const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.64, 0.04), plateMat);
-plate.rotation.x = -Math.PI / 2;
-plate.position.set(0, 0.001, ROWS * PAD_PITCH / 2 + 0.05);
-consoleGroup.add(plate);
-
-function refreshConsole() {
-  pads.forEach((p, i) => {
-    if (p.icon) {
-      p.group.remove(p.icon);
-      p.icon.traverse((o) => o.material && o.material.dispose());
-    }
-    p.icon = makeShape(music.bank * BANK_SIZE + i, 0.017, 0.75);
-    p.icon.position.y = 0.0065;
-    p.group.add(p.icon);
-    p.edges.material.color.setHex(theme.rows[p.row]);
-  });
-  const b = BANKS[music.bank];
-  if (plateMat.map) plateMat.map.dispose();
+  const plateMat = new THREE.MeshBasicMaterial({ color: theme.ui, transparent: true, depthWrite: false });
+  const plate = new THREE.Mesh(new THREE.PlaneGeometry(0.66, 0.038), plateMat);
+  plate.rotation.x = -Math.PI / 2;
+  // Outer edge, away from the sculpture, so the name reads from outside the ring.
+  plate.position.set(0, 0.001, CONSOLE_HALF_D + 0.048);
   plateMat.map = textTexture(
-    `BANK ${music.bank + 1} · ${b.name.toUpperCase()}   ${b.rows.join(' · ')}`,
-    1024, 64, '600 36px ui-monospace, Menlo, monospace'
+    `${bank.name.toUpperCase()}    ${bank.rows.join(' · ')}`,
+    1024, 64, '600 32px ui-monospace, Menlo, monospace'
   );
-  plateMat.needsUpdate = true;
+  group.add(plate);
+
+  const bankPads = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const index = r * COLS + c;
+      const g = new THREE.Group();
+      g.position.set((c - (COLS - 1) / 2) * PAD_PITCH, 0, (r - (ROWS - 1) / 2) * PAD_PITCH);
+      const base = new THREE.Mesh(padBoxGeo, new THREE.MeshBasicMaterial({ color: theme.padBase }));
+      base.userData = { bank: bankIndex, pad: index, hx: PAD / 2, hz: PAD / 2 };
+      g.add(base);
+      const edges = new THREE.LineSegments(padEdgeGeo, lineMat(theme.rows[r], 0.5));
+      g.add(edges);
+      const labelMat = new THREE.MeshBasicMaterial({
+        map: textTexture(KEY_LABELS[r][c], 64, 64, '600 40px ui-monospace, Menlo, monospace'),
+        color: theme.ui,
+        transparent: true,
+        depthWrite: false,
+      });
+      labelMats.push(labelMat);
+      const label = new THREE.Mesh(labelGeo, labelMat);
+      label.rotation.x = -Math.PI / 2;
+      label.position.set(-PAD / 2 + 0.014, 0.0066, PAD / 2 - 0.014);
+      g.add(label);
+      group.add(g);
+      bankPads.push({ group: g, base, edges, labelMat, icon: null, row: r, flash: 0 });
+      hitMeshes.push(base);
+    }
+  }
+
+  rig.add(group);
+  const console = {
+    group,
+    pads: bankPads,
+    inner,
+    outer,
+    plateMat,
+    baseX: 0,
+    baseY: 0,
+    baseZ: 0,
+    goal: new THREE.Vector3(),
+    goalRot: 0,
+  };
+  consoles.push(console);
+  return console;
 }
 
-/* Layers: the bottom ("active") layer sits just behind the keys with the same column pitch, so
-   every note's line runs straight back from its pad, parallel to the others. When the bar
-   wraps, the layer rises into the stack and a fresh layer starts behind the keys. */
+for (let i = 0; i < BANKS.length; i++) makeConsole(i);
+
+function refreshConsoles() {
+  consoles.forEach((c, bank) => {
+    c.pads.forEach((p, i) => {
+      if (p.icon) {
+        p.group.remove(p.icon);
+        p.icon.traverse((o) => o.material && o.material.dispose());
+      }
+      p.icon = makeShape(bank * BANK_SIZE + i, 0.017, 0.75);
+      p.icon.position.y = 0.0065;
+      p.group.add(p.icon);
+      p.edges.material.color.setHex(theme.rows[p.row]);
+    });
+    c.plateMat.color.setHex(theme.ui);
+    c.inner.material.color.setHex(theme.frame);
+    c.outer.material.color.setHex(theme.frame);
+  });
+}
+
+/* Layers stack at the origin. Keyboards sit outside them. When the bar wraps, the
+   active layer rises and a fresh one starts in the center. */
 const GRID_W = COLS * PAD_PITCH + 0.05;
 const GRID_D = ROWS * PAD_PITCH + 0.05;
 const LAYER_Y0 = 0.12;
@@ -966,8 +972,47 @@ const MAX_LAYERS = 12;
 const RING_R = 0.4;
 const ANG_STEP = (Math.PI * 2) / STEPS;
 const stack = new THREE.Group();
-stack.position.set(0, 0, consoleGroup.position.z - 0.62);
 rig.add(stack);
+
+/* Place each keyboard around the current layer shape. Local -Z is the inner edge. */
+const CONSOLE_GAP = 0.09;
+let consolesPlaced = false;
+
+function layoutConsoles() {
+  const place = (c, x, y, z, ry) => {
+    c.baseX = x;
+    c.baseY = y;
+    c.baseZ = z;
+    c.goalRot = ry;
+    if (!consolesPlaced) {
+      c.group.position.set(x, y, z);
+      c.group.rotation.y = ry;
+    }
+  };
+  if (style === 'rings') {
+    const R = RING_R + CONSOLE_GAP + CONSOLE_HALF_D;
+    consoles.forEach((c, i) => {
+      const a = Math.PI / 4 + (i / consoles.length) * Math.PI * 2;
+      place(c, Math.sin(a) * R, 0, Math.cos(a) * R, a);
+    });
+  } else if (style === 'helix') {
+    consoles.forEach((c, i) => {
+      const a = Math.PI / 4 + (i / consoles.length) * Math.PI * 2;
+      const R = RING_R + CONSOLE_HALF_D + 0.12 + i * 0.05;
+      place(c, Math.sin(a) * R, i * 0.06, Math.cos(a) * R, a);
+    });
+  } else {
+    const z = GRID_D / 2 + CONSOLE_GAP + CONSOLE_HALF_D;
+    const x = GRID_W / 2 + CONSOLE_GAP + CONSOLE_HALF_D;
+    [
+      [0, 0, z, 0],
+      [x, 0, 0, Math.PI / 2],
+      [0, 0, -z, Math.PI],
+      [-x, 0, 0, -Math.PI / 2],
+    ].forEach((spot, i) => place(consoles[i], spot[0], spot[1], spot[2], spot[3]));
+  }
+  consolesPlaced = true;
+}
 
 const view = { spread: 0.085, twist: 0 };
 
@@ -1208,24 +1253,33 @@ function applyStyle(name) {
       n.group.traverse((o) => o.material && o.material.color.setHex(c));
     });
   });
-  [innerFrame, outerFrame, baseDisc, spine, progressTicks].forEach((m) => m.material.color.setHex(theme.frame));
+  [baseDisc, spine, progressTicks].forEach((m) => m.material.color.setHex(theme.frame));
   progress.material.color.setHex(theme.ui);
-  arrows.forEach((a) => {
-    a.edges.material.color.setHex(theme.frame);
-    a.icon.material.color.setHex(theme.frame);
-  });
-  plateMat.color.setHex(theme.ui);
   labelMats.forEach((m) => m.color.setHex(theme.ui));
   if (isSlices) spine.position.set(-GRID_W / 2, LAYER_Y0, -GRID_D / 2);
   else spine.position.set(0, LAYER_Y0, 0);
 
-  refreshConsole();
+  refreshConsoles();
+  layoutConsoles();
+  highlightConsole();
   document.querySelectorAll('[data-style]').forEach((b) => b.classList.toggle('is-on', b.dataset.style === name));
+}
+
+function highlightConsole() {
+  consoles.forEach((c, i) => {
+    const on = i === music.bank;
+    c.outer.material.opacity = on ? 0.75 : 0.16;
+    c.inner.material.opacity = on ? 0.7 : 0.32;
+    c.plateMat.opacity = on ? 1 : 0.42;
+    c.pads.forEach((p) => {
+      p.labelMat.opacity = on ? 0.95 : 0.4;
+    });
+  });
 }
 
 function setBank(i) {
   music.bank = (i + BANKS.length) % BANKS.length;
-  refreshConsole();
+  highlightConsole();
   document.querySelectorAll('[data-bank]').forEach((b) => b.classList.toggle('is-on', Number(b.dataset.bank) === music.bank));
 }
 
@@ -1272,25 +1326,27 @@ function nearestStep(now) {
 const tmpA = new THREE.Vector3();
 const tmpB = new THREE.Vector3();
 
-/* Every sound lands on the active layer, with a vertical line up from its pad. */
+/* Every sound lands on the active layer, with a line from the pad that played it. */
 function fireNote(code) {
+  const bank = codeBank(code);
   const p = codePad(code);
   const color = theme.rows[padRow(p)];
-  // only flash the pad if its bank is the one on the console
-  if (codeBank(code) === music.bank) pads[p].flash = 1;
+  const pad = consoles[bank].pads[p];
+  pad.flash = 1;
   const n = addLayerNote(layers[0], code);
   n.pop = 1;
   layers[0].glow = Math.max(layers[0].glow, 0.5);
-  pads[p].base.getWorldPosition(tmpA);
+  pad.base.getWorldPosition(tmpA);
   tmpA.y += 0.007;
   n.group.getWorldPosition(tmpB);
   spawnLaser(tmpA, tmpB, color);
   spawnRipple(tmpB, color);
 }
 
-function hitPad(p) {
+function hitPad(bank, p) {
   if (!ac) return;
-  const code = music.bank * BANK_SIZE + p;
+  if (bank !== music.bank) setBank(bank);
+  const code = bank * BANK_SIZE + p;
   const now = ac.currentTime;
   playCode(code, now);
   if (music.playing && music.recording) music.pattern[nearestStep(now)].add(code);
@@ -1299,13 +1355,7 @@ function hitPad(p) {
 
 function hitMesh(mesh) {
   const d = mesh.userData;
-  if (d.pad !== undefined) {
-    hitPad(d.pad);
-    return;
-  }
-  const arrow = arrows.find((a) => a.base === mesh);
-  if (arrow) arrow.flash = 1;
-  setBank(music.bank + (d.action === 'bankPrev' ? -1 : 1));
+  if (d.pad !== undefined) hitPad(d.bank, d.pad);
 }
 
 /* ------------------------------------------------------------------ */
@@ -1313,17 +1363,16 @@ function hitMesh(mesh) {
 /* ------------------------------------------------------------------ */
 
 const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 0.45, 0.2);
+controls.target.set(0, 0.2, 0);
 controls.enableDamping = true;
 controls.dampingFactor = 0.08;
-controls.autoRotate = true;
-controls.autoRotateSpeed = 0.5;
+controls.autoRotate = false;
 controls.minDistance = 0.4;
-controls.maxDistance = 6;
+controls.maxDistance = 8;
 
 const VIEWS = {
-  orbit: { pos: new THREE.Vector3(1.1, 1.2, 2.05), target: new THREE.Vector3(0, 0.45, 0.2), auto: true },
-  top: { pos: new THREE.Vector3(0, 2.4, 1.35), target: new THREE.Vector3(0, 0.3, 0.25), auto: false },
+  orbit: { pos: new THREE.Vector3(1.55, 1.85, 2.35), target: new THREE.Vector3(0, 0.2, 0), auto: false },
+  top: { pos: new THREE.Vector3(0, 3.15, 0.02), target: new THREE.Vector3(0, 0, 0), auto: false },
 };
 let viewTween = null;
 
@@ -1365,7 +1414,7 @@ window.addEventListener('keydown', (e) => {
   if (!ac || e.repeat || e.metaKey || e.ctrlKey || e.altKey) return;
   if (KEY_TO_PAD.has(e.code)) {
     e.preventDefault();
-    hitPad(KEY_TO_PAD.get(e.code));
+    hitPad(music.bank, KEY_TO_PAD.get(e.code));
   } else if (e.code === 'BracketLeft' || e.code === 'BracketRight') {
     e.preventDefault();
     setBank(music.bank + (e.code === 'BracketLeft' ? -1 : 1));
@@ -1655,18 +1704,21 @@ function tick() {
   progress.visible = !!ac && music.playing;
 
   baseColor.setHex(theme.padBase);
-  pads.forEach((p) => {
-    p.flash = Math.max(0, p.flash - dt * 5);
-    hotColor.setHex(theme.rows[p.row]).multiplyScalar(0.5);
-    p.base.material.color.copy(baseColor).lerp(hotColor, p.flash);
-    p.edges.material.opacity = 0.45 + 0.55 * p.flash;
-    p.group.position.y = -0.004 * p.flash;
-  });
-  arrows.forEach((a) => {
-    a.flash = Math.max(0, a.flash - dt * 5);
-    hotColor.setHex(theme.frame).multiplyScalar(0.4);
-    a.base.material.color.copy(baseColor).lerp(hotColor, a.flash);
-    a.group.position.y = -0.004 * a.flash;
+  consoles.forEach((c, i) => {
+    const lift = i === music.bank ? 0.016 : 0;
+    c.goal.set(c.baseX, c.baseY + lift, c.baseZ);
+    c.group.position.lerp(c.goal, 0.08);
+    let d = c.goalRot - c.group.rotation.y;
+    d = Math.atan2(Math.sin(d), Math.cos(d));
+    c.group.rotation.y += d * 0.08;
+    const armed = i === music.bank;
+    c.pads.forEach((p) => {
+      p.flash = Math.max(0, p.flash - dt * 5);
+      hotColor.setHex(theme.rows[p.row]).multiplyScalar(0.5);
+      p.base.material.color.copy(baseColor).lerp(hotColor, p.flash);
+      p.edges.material.opacity = (armed ? 0.5 : 0.28) + 0.55 * p.flash;
+      p.group.position.y = -0.004 * p.flash;
+    });
   });
 
   ripples.forEach((r) => {
