@@ -6,7 +6,7 @@
   <meta content="width=device-width, initial-scale=1.0" name="viewport">
 
   <title>INTERACTIVE 3D - Mr.Koo Portfolio</title>
-  <meta content="3D Gaussian splat viewer — drag and drop .ply, .splat scenes" name="description">
+  <meta content="Interactive 3D experiments — spatial sound, play, and Gaussian splat captures" name="description">
 
   <link href="assets/img/favicon.png" rel="icon">
   <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
@@ -17,24 +17,8 @@
 
   <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
-  <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
-  <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
-  <link href="assets/vendor/aos/aos.css" rel="stylesheet">
-
-  <link href="assets/css/main.css?v=intro7" rel="stylesheet">
-  <link href="assets/css/spatial-maker.css" rel="stylesheet">
-
-  <!-- Optional: if Pages serves an LFS pointer or omits the big .ply, set a CORS-safe absolute URL (e.g. raw.githubusercontent.com/USER/REPO/BRANCH/3D_WEB_VIEW/assets/models/punk_room.ply). Comma-separated = try in order. -->
-  <!-- <meta name="spatial-sample-url" content=""> -->
-
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-      "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.6/build/gaussian-splats-3d.module.js"
-    }
-  }
-  </script>
+  <link href="assets/css/main.css?v=intro8" rel="stylesheet">
+  <link href="assets/css/experiments.css?v=xp4" rel="stylesheet">
 </head>
 
 <body class="page-interactive3d">
@@ -61,172 +45,142 @@
   </header>
 
   <div id="app-content">
-    <main id="main" class="sm-main">
+    <main class="xp" id="xp">
 
-      <div id="spatial-maker">
+    <header class="xp-lead">
+      <h1>Interactive 3D</h1>
+      <p>The interface should disappear into the experience. These are spaces you enter — spatial sound, play, and real places — where the way you move through them is the design.</p>
+    </header>
 
-        <!-- Full-screen viewport -->
-        <div class="sm-viewport sm-viewport--grid sm-viewport--bg-black" id="sm-viewport">
-          <div class="sm-viewport__grid" aria-hidden="true">
-            <div class="sm-viewport__grid-floor"></div>
-          </div>
-          <div class="sm-viewport__axes" aria-hidden="true">
-            <span class="sm-axis sm-axis--y"></span>
-            <span class="sm-axis sm-axis--x"></span>
-          </div>
-          <div id="sm-canvas-host"></div>
-          <div id="sm-preview-host" class="sm-preview-host" hidden aria-hidden="true">
-            <iframe id="sm-preview-frame" class="sm-preview-frame" title="" allow="autoplay; fullscreen" tabindex="0"></iframe>
-          </div>
-        </div>
 
-        <input type="file" id="sm-file-input" class="sm-hidden-input" accept=".ply,.splat,.ksplat,.sog,.sgp" multiple>
-
-        <!-- Center page header -->
-        <div class="sm-page-header">
-          <h2>INTERACTIVE 3D</h2>
-          <p>An interactive 3D view with assets</p>
-          <div class="sm-page-header__actions">
-            <div class="sm-cube-rain-intensity" id="sm-cube-rain-intensity" hidden role="group" aria-label="Rain intensity">
-              <button type="button" class="sm-cube-rain-intensity__btn" data-intensity="none">none</button>
-              <button type="button" class="sm-cube-rain-intensity__btn is-active" data-intensity="light">light</button>
-              <button type="button" class="sm-cube-rain-intensity__btn" data-intensity="medium">medium</button>
-              <button type="button" class="sm-cube-rain-intensity__btn" data-intensity="heavy">heavy</button>
-            </div>
-            <button type="button" class="sm-cube-rain-sound" id="sm-cube-rain-sound" hidden aria-pressed="false" aria-label="Turn sound on">
-              <i class="bi bi-volume-mute-fill sm-cube-rain-sound__icon-off" aria-hidden="true"></i>
-              <i class="bi bi-volume-up-fill sm-cube-rain-sound__icon-on" aria-hidden="true"></i>
-              <span class="sm-cube-rain-sound__label sm-cube-rain-sound__label-off">Sound Off</span>
-              <span class="sm-cube-rain-sound__label sm-cube-rain-sound__label-on">Sound On</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Left dock -->
-        <aside class="sm-dock sm-dock--left" aria-label="Scene panels">
-          <div class="sm-panel sm-panel--open">
-            <button type="button" class="sm-panel__head" aria-expanded="true" data-sm-panel-toggle>
-              <i class="bi bi-box-arrow-in-down"></i>
-              <span>Scene</span>
-              <i class="bi bi-chevron-down"></i>
-            </button>
-            <div class="sm-panel__body">
-              <div class="sm-panel__actions">
-                <button type="button" class="sm-btn" id="sm-load-sample">
-                  <i class="bi bi-play-circle"></i>
-                  Load Sample Data
-                </button>
-                <button type="button" class="sm-btn sm-btn--secondary" id="sm-import-file">
-                  <i class="bi bi-upload"></i>
-                  Import file
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="sm-panel">
-            <button type="button" class="sm-panel__head" aria-expanded="false" data-sm-panel-toggle>
-              <i class="bi bi-stars"></i>
-              <span>Fun Projects</span>
-              <i class="bi bi-chevron-down"></i>
-            </button>
-            <div class="sm-panel__body sm-panel__body--collapsed">
-              <div class="sm-panel__actions">
-                <button type="button" class="sm-btn sm-btn--secondary" id="sm-preview-cube-rain" data-sm-preview="cube-rain">
-                  <i class="bi bi-boxes"></i>
-                  Cube Rain
-                </button>
-                <button type="button" class="sm-btn sm-btn--secondary" id="sm-preview-orion" data-sm-preview="orion">
-                  <i class="bi bi-rocket-takeoff"></i>
-                  Orion Preview
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="sm-panel">
-            <button type="button" class="sm-panel__head" aria-expanded="false" data-sm-panel-toggle>
-              <i class="bi bi-layers"></i>
-              <span>Layers</span>
-              <i class="bi bi-chevron-down"></i>
-            </button>
-            <div class="sm-panel__body sm-panel__body--collapsed">
-              <ul class="sm-layer-list" id="sm-layer-list">
-                <li class="sm-layer-empty">No layers yet</li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="sm-panel">
-            <button type="button" class="sm-panel__head" aria-expanded="false" data-sm-panel-toggle>
-              <i class="bi bi-arrows-move"></i>
-              <span>Transform</span>
-              <i class="bi bi-chevron-down"></i>
-            </button>
-            <div class="sm-panel__body sm-panel__body--collapsed">
-              <p class="sm-label">Position</p>
-              <div class="sm-field-row"><label>x</label><input type="range" min="-5" max="5" step="0.05" value="0.05" id="sm-pos-x"><input type="number" step="0.05" value="0.05" id="sm-pos-x-n"></div>
-              <div class="sm-field-row"><label>y</label><input type="range" min="-5" max="5" step="0.05" value="1.45" id="sm-pos-y"><input type="number" step="0.05" value="1.45" id="sm-pos-y-n"></div>
-              <div class="sm-field-row"><label>z</label><input type="range" min="-5" max="8" step="0.05" value="0" id="sm-pos-z"><input type="number" step="0.05" value="0" id="sm-pos-z-n"></div>
-              <p class="sm-label">Rotation (°)</p>
-              <div class="sm-field-row"><label>x</label><input type="range" min="-180" max="180" step="1" value="-20" id="sm-rot-x"><input type="number" min="-180" max="180" step="1" value="-20" id="sm-rot-x-n"></div>
-              <div class="sm-field-row"><label>y</label><input type="range" min="-180" max="180" step="1" value="180" id="sm-rot-y"><input type="number" min="-180" max="180" step="1" value="180" id="sm-rot-y-n"></div>
-              <div class="sm-field-row"><label>z</label><input type="range" min="-180" max="180" step="1" value="180" id="sm-rot-z"><input type="number" min="-180" max="180" step="1" value="180" id="sm-rot-z-n"></div>
-              <p class="sm-label">Scale</p>
-              <div class="sm-field-row"><label>uniform</label><input type="range" min="0.1" max="3" step="0.05" value="1" id="sm-scale-uniform"><input type="number" min="0.1" max="3" step="0.05" value="1" id="sm-scale-uniform-n"></div>
-              <div class="sm-field-row"><label>x</label><input type="range" min="0.1" max="3" step="0.05" value="1" id="sm-scale-x"><input type="number" min="0.1" max="3" step="0.05" value="1" id="sm-scale-x-n"></div>
-              <div class="sm-field-row"><label>y</label><input type="range" min="0.1" max="3" step="0.05" value="1" id="sm-scale-y"><input type="number" min="0.1" max="3" step="0.05" value="1" id="sm-scale-y-n"></div>
-              <div class="sm-field-row"><label>z</label><input type="range" min="0.1" max="3" step="0.05" value="1" id="sm-scale-z"><input type="number" min="0.1" max="3" step="0.05" value="1" id="sm-scale-z-n"></div>
-            </div>
-          </div>
-
-          <div class="sm-panel">
-            <button type="button" class="sm-panel__head" aria-expanded="false" data-sm-panel-toggle>
-              <i class="bi bi-palette"></i>
-              <span>Color Grading</span>
-              <i class="bi bi-chevron-down"></i>
-            </button>
-            <div class="sm-panel__body sm-panel__body--collapsed">
-              <p class="sm-placeholder">Exposure, contrast, and LUT controls — coming soon.</p>
-            </div>
-          </div>
-        </aside>
-
-        <!-- Grid toggle kept for viewer logic (not shown in UI) -->
-        <input type="checkbox" id="sm-grid" class="sm-visually-hidden" checked aria-hidden="true" tabindex="-1">
-
-        <div id="sm-orion-presets" class="sm-orion-presets" hidden role="group" aria-label="Orion camera views">
-          <button type="button" class="sm-orion-preset__btn" data-orion-preset="Crew Module">Crew Module</button>
-          <button type="button" class="sm-orion-preset__btn" data-orion-preset="European Service">European Service</button>
-          <button type="button" class="sm-orion-preset__btn" data-orion-preset="Solar Arrays">Solar Arrays</button>
-          <button type="button" class="sm-orion-preset__btn" data-orion-preset="Exhaust">Exhaust</button>
-        </div>
-
-        <div id="sm-load-card" class="sm-load-card" hidden aria-live="polite">
-          <div class="sm-load-card__panel">
-            <div class="sm-load-card__ring" aria-hidden="true"></div>
-            <p class="sm-load-card__text" id="sm-load-card-text"></p>
-            <p class="sm-load-card__sub" id="sm-load-card-sub" hidden></p>
-          </div>
-        </div>
-
-        <p class="sm-status" id="sm-status">Ready</p>
+    <section class="xp-row" data-theme="music" data-name="XR Music Player" data-src="spatial-music.html">
+      <button type="button" class="xp-row__peek" data-xp-peek><small>01</small> XR Music Player</button>
+      <div class="xp-row__art art-music" data-xp-open>
+        <span class="orb"></span><span class="ring"></span><span class="ring"></span><span class="ring"></span>
+        <div class="orbit"></div>
+        <div class="tile t1"></div><div class="tile t2"></div><div class="tile t3"></div>
+        <div class="wave" data-bars="22"></div>
       </div>
+      <div class="xp-row__intro">
+        <span class="xp-row__index">01</span>
+        <button type="button" class="xp-row__title" data-xp-open>XR Music<br>Player</button>
+        <p class="xp-row__desc">An immersive music player that blends spatial audio, real-time visuals, and XR interactions for a new listening experience.</p>
+        <button type="button" class="xp-row__explore" data-xp-open>EXPLORE <i class="bi bi-arrow-right"></i></button>
+      </div>
+      <button type="button" class="xp-row__plus" data-xp-open aria-label="Open XR Music Player"><i class="bi bi-plus-lg"></i></button>
+      <div class="xp-detail">
+        <div class="xp-detail__stage"><div class="xp-detail__loading">LOADING EXPERIENCE…</div></div>
+        <div class="xp-detail__info">
+          <span class="xp-row__index">01 / 04</span>
+          <h3>XR Music Player</h3>
+          <p>Spatial audio, real-time visuals, and XR interactions.</p>
+        </div>
+      </div>
+    </section>
 
+    <section class="xp-row" data-theme="rain" data-name="Rain Cube" data-src="cube-rain-embed.html">
+      <button type="button" class="xp-row__peek" data-xp-peek><small>02</small> Rain Cube</button>
+      <div class="xp-row__art art-rain" data-xp-open data-drops="18">
+        <div class="ripples"><span></span><span></span><span></span></div>
+        <div class="cube-wrap">
+          <div class="cube core"><b></b><b></b><b></b><b></b><b></b><b></b></div>
+          <div class="cube"><b></b><b></b><b></b><b></b><b></b><b></b></div>
+        </div>
+      </div>
+      <div class="xp-row__intro">
+        <span class="xp-row__index">02</span>
+        <button type="button" class="xp-row__title" data-xp-open>Rain<br>Cube</button>
+        <p class="xp-row__desc">A playful interactive game where rain, physics and puzzles come together.</p>
+        <button type="button" class="xp-row__explore" data-xp-open>EXPLORE <i class="bi bi-arrow-right"></i></button>
+      </div>
+      <button type="button" class="xp-row__plus" data-xp-open aria-label="Open Rain Cube"><i class="bi bi-plus-lg"></i></button>
+      <div class="xp-detail">
+        <div class="xp-detail__stage"><div class="xp-detail__loading">LOADING EXPERIENCE…</div></div>
+        <div class="xp-detail__info">
+          <span class="xp-row__index">02 / 04</span>
+          <h3>Rain Cube</h3>
+          <p>Rain, physics and puzzles. Drag to orbit the cube.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="xp-row" data-theme="gs" data-name="3DGS Viewer" data-src="3dgs-viewer.html" data-strip-chrome>
+      <button type="button" class="xp-row__peek" data-xp-peek><small>03</small> 3DGS Viewer</button>
+      <div class="xp-row__art art-gs" data-xp-open>
+        <canvas></canvas>
+        <div class="scan"></div>
+      </div>
+      <div class="xp-row__intro">
+        <span class="xp-row__index">03</span>
+        <button type="button" class="xp-row__title" data-xp-open>3DGS<br>Viewer</button>
+        <p class="xp-row__desc">Explore real-world places through Gaussian Splatting. Zoom, move and experience photorealistic 3D capture in real time.</p>
+        <button type="button" class="xp-row__explore" data-xp-open>EXPLORE <i class="bi bi-arrow-right"></i></button>
+      </div>
+      <button type="button" class="xp-row__plus" data-xp-open aria-label="Open 3DGS Viewer"><i class="bi bi-plus-lg"></i></button>
+      <div class="xp-detail">
+        <div class="xp-detail__stage"><div class="xp-detail__loading">LOADING EXPERIENCE…</div></div>
+        <div class="xp-detail__info">
+          <span class="xp-row__index">03 / 04</span>
+          <h3>3DGS Viewer</h3>
+          <p>Photoreal Gaussian Splat captures in real time.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="xp-row" data-theme="data" data-name="DataLand">
+      <button type="button" class="xp-row__peek" data-xp-peek><small>04</small> Interactive Play / DataLand</button>
+      <div class="xp-row__art art-data" data-xp-open>
+        <div class="xp-play" id="xp-play"></div>
+      </div>
+      <div class="xp-row__intro">
+        <span class="xp-row__index">04</span>
+        <button type="button" class="xp-row__title" data-xp-open>Interactive<br>Play<small>/ DataLand</small></button>
+        <p class="xp-row__desc">An immersive data-driven art installation where users can explore, interact and reshape the scene.</p>
+        <button type="button" class="xp-row__explore" data-xp-open>EXPLORE <i class="bi bi-arrow-right"></i></button>
+      </div>
+      <button type="button" class="xp-row__plus" data-xp-open aria-label="Open DataLand"><i class="bi bi-plus-lg"></i></button>
+      <div class="xp-detail">
+        <div class="xp-detail__stage is-ready">
+          <div class="xp-detail__placeholder">
+            <div>
+              <h4>DataLand</h4>
+              <p>Interactive simulator coming soon. This panel will host the live installation.</p>
+            </div>
+          </div>
+        </div>
+        <div class="xp-detail__info">
+          <span class="xp-row__index">04 / 04</span>
+          <h3>Interactive Play</h3>
+          <p>A data-driven art installation you can explore and reshape.</p>
+        </div>
+        <div class="xp-shapes" role="group" aria-label="Shape">
+          <button type="button" data-shape="cube" class="is-on">Cube</button>
+          <button type="button" data-shape="sphere">Sphere</button>
+          <button type="button" data-shape="octa">Octahedron</button>
+          <button type="button" data-shape="cylinder">Cylinder</button>
+          <button type="button" data-shape="torus">Torus</button>
+          <button type="button" data-shape="cone">Cone</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Shared controls, moved into whichever row is open -->
+    <button type="button" class="xp-detail__close" id="xp-close" hidden><i class="bi bi-grid-3x3-gap"></i> ALL EXPERIMENTS</button>
+    <div class="xp-detail__nav" id="xp-nav" hidden>
+      <button type="button" data-xp-step="-1"><i class="bi bi-arrow-up"></i><span class="xp-label">PREV</span></button>
+      <div class="xp-dots"><span></span><span></span><span></span><span></span></div>
+      <button type="button" data-xp-step="1"><span class="xp-label" id="xp-next-label">NEXT</span><i class="bi bi-arrow-down"></i></button>
+    </div>
+
+  
     </main>
-  </div>
-
-  <div id="preloader">
-    <div class="line"></div>
   </div>
 
   <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
   <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
   <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
   <script src="assets/vendor/aos/aos.js"></script>
-  <script src="assets/vendor/php-email-form/validate.js"></script>
-  <script src="assets/js/main.js?v=intro7"></script>
-  <script type="module" src="assets/js/spatial-maker.js"></script>
+  <script src="assets/js/main.js?v=intro17"></script>
 
 </body>
 </html>

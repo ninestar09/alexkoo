@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+  <title>3DGS Viewer - Mr.Koo Portfolio</title>
+  <meta name="robots" content="noindex">
+  <meta content="3D Gaussian splat viewer — drag and drop .ply, .splat scenes" name="description">
+
+  <link href="assets/img/favicon.png" rel="icon">
+  <link href="assets/img/apple-touch-icon.png" rel="apple-touch-icon">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,600;1,700&family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Cardo:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
+  <link href="assets/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="assets/vendor/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
+  <link href="assets/vendor/swiper/swiper-bundle.min.css" rel="stylesheet">
+  <link href="assets/vendor/glightbox/css/glightbox.min.css" rel="stylesheet">
+  <link href="assets/vendor/aos/aos.css" rel="stylesheet">
+
+  <link href="assets/css/main.css?v=intro7" rel="stylesheet">
+  <link href="assets/css/spatial-maker.css" rel="stylesheet">
+
+  <!-- Optional: if Pages serves an LFS pointer or omits the big .ply, set a CORS-safe absolute URL (e.g. raw.githubusercontent.com/USER/REPO/BRANCH/3D_WEB_VIEW/assets/models/punk_room.ply). Comma-separated = try in order. -->
+  <!-- <meta name="spatial-sample-url" content=""> -->
+
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "@mkkellogg/gaussian-splats-3d": "https://cdn.jsdelivr.net/npm/@mkkellogg/gaussian-splats-3d@0.4.6/build/gaussian-splats-3d.module.js"
+    }
+  }
+  </script>
+</head>
+
+<body class="page-interactive3d">
+
+  <header id="header" class="header d-flex align-items-center fixed-top">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+      <div class="header__brand-spacer me-auto me-lg-0" aria-hidden="true"></div>
+      <nav id="navbar" class="navbar navbar-pill">
+        <span class="nav-pill-indicator" id="navPillIndicator" aria-hidden="true"></span>
+        <ul>
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About</a></li>
+          <li><a href="interactive3d.html" class="active">INTERACTIVE 3D</a></li>
+          <li><a href="contact.html">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="header-social-links">
+        <a href="http://www.twitter.com/@ninestar09" class="twitter"><i class="bi bi-twitter"></i></a>
+        <a href="https://www.linkedin.com/in/skkoo" class="linkedin"><i class="bi bi-linkedin"></i></a>
+      </div>
+      <i class="mobile-nav-toggle mobile-nav-show bi bi-list"></i>
+      <i class="mobile-nav-toggle mobile-nav-hide d-none bi bi-x"></i>
+    </div>
+  </header>
+
+  <div id="app-content">
+    <main id="main" class="sm-main">
+
+      <div id="spatial-maker">
+
+        <!-- Full-screen viewport -->
+        <div class="sm-viewport sm-viewport--grid sm-viewport--bg-black" id="sm-viewport">
+          <div class="sm-viewport__grid" aria-hidden="true">
+            <div class="sm-viewport__grid-floor"></div>
+          </div>
+          <div class="sm-viewport__axes" aria-hidden="true">
+            <span class="sm-axis sm-axis--y"></span>
+            <span class="sm-axis sm-axis--x"></span>
+          </div>
+          <div id="sm-canvas-host"></div>
+          <div id="sm-preview-host" class="sm-preview-host" hidden aria-hidden="true">
+            <iframe id="sm-preview-frame" class="sm-preview-frame" title="" allow="autoplay; fullscreen" tabindex="0"></iframe>
+          </div>
+        </div>
+
+        <input type="file" id="sm-file-input" class="sm-hidden-input" accept=".ply,.splat,.ksplat,.sog,.sgp" multiple>
+
+        <!-- Center page header -->
+        <div class="sm-page-header">
+          <h2>INTERACTIVE 3D</h2>
+          <p>An interactive 3D view with assets</p>
+          <div class="sm-page-header__actions">
+            <div class="sm-cube-rain-intensity" id="sm-cube-rain-intensity" hidden role="group" aria-label="Rain intensity">
+              <button type="button" class="sm-cube-rain-intensity__btn" data-intensity="none">none</button>
+              <button type="button" class="sm-cube-rain-intensity__btn is-active" data-intensity="light">light</button>
+              <button type="button" class="sm-cube-rain-intensity__btn" data-intensity="medium">medium</button>
+              <button type="button" class="sm-cube-rain-intensity__btn" data-intensity="heavy">heavy</button>
+            </div>
+            <button type="button" class="sm-cube-rain-sound" id="sm-cube-rain-sound" hidden aria-pressed="false" aria-label="Turn sound on">
+              <i class="bi bi-volume-mute-fill sm-cube-rain-sound__icon-off" aria-hidden="true"></i>
+              <i class="bi bi-volume-up-fill sm-cube-rain-sound__icon-on" aria-hidden="true"></i>
+              <span class="sm-cube-rain-sound__label sm-cube-rain-sound__label-off">Sound Off</span>
+              <span class="sm-cube-rain-sound__label sm-cube-rain-sound__label-on">Sound On</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Left dock -->
+        <aside class="sm-dock sm-dock--left" aria-label="Scene panels">
+          <div class="sm-panel sm-panel--open">
+            <button type="button" class="sm-panel__head" aria-expanded="true" data-sm-panel-toggle>
+              <i class="bi bi-box-arrow-in-down"></i>
+              <span>Scene</span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="sm-panel__body">
+              <div class="sm-panel__actions">
+                <button type="button" class="sm-btn" id="sm-load-sample">
+                  <i class="bi bi-play-circle"></i>
+                  Load Sample Data
+                </button>
+                <button type="button" class="sm-btn sm-btn--secondary" id="sm-import-file">
+                  <i class="bi bi-upload"></i>
+                  Import file
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sm-panel">
+            <button type="button" class="sm-panel__head" aria-expanded="false" data-sm-panel-toggle>
+              <i class="bi bi-stars"></i>
+              <span>Fun Projects</span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="sm-panel__body sm-panel__body--collapsed">
+              <div class="sm-panel__actions">
+                <button type="button" class="sm-btn sm-btn--secondary" id="sm-preview-cube-rain" data-sm-preview="cube-rain">
+                  <i class="bi bi-boxes"></i>
+                  Cube Rain
+                </button>
+                <button type="button" class="sm-btn sm-btn--secondary" id="sm-preview-orion" data-sm-preview="orion">
+                  <i class="bi bi-rocket-takeoff"></i>
+                  Orion Preview
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="sm-panel">
+            <button type="button" class="sm-panel__head" aria-expanded="false" data-sm-panel-toggle>
+              <i class="bi bi-layers"></i>
+              <span>Layers</span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="sm-panel__body sm-panel__body--collapsed">
+              <ul class="sm-layer-list" id="sm-layer-list">
+                <li class="sm-layer-empty">No layers yet</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="sm-panel">
+            <button type="button" class="sm-panel__head" aria-expanded="false" data-sm-panel-toggle>
+              <i class="bi bi-arrows-move"></i>
+              <span>Transform</span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="sm-panel__body sm-panel__body--collapsed">
+              <p class="sm-label">Position</p>
+              <div class="sm-field-row"><label>x</label><input type="range" min="-5" max="5" step="0.05" value="0.05" id="sm-pos-x"><input type="number" step="0.05" value="0.05" id="sm-pos-x-n"></div>
+              <div class="sm-field-row"><label>y</label><input type="range" min="-5" max="5" step="0.05" value="1.45" id="sm-pos-y"><input type="number" step="0.05" value="1.45" id="sm-pos-y-n"></div>
+              <div class="sm-field-row"><label>z</label><input type="range" min="-5" max="8" step="0.05" value="0" id="sm-pos-z"><input type="number" step="0.05" value="0" id="sm-pos-z-n"></div>
+              <p class="sm-label">Rotation (°)</p>
+              <div class="sm-field-row"><label>x</label><input type="range" min="-180" max="180" step="1" value="-20" id="sm-rot-x"><input type="number" min="-180" max="180" step="1" value="-20" id="sm-rot-x-n"></div>
+              <div class="sm-field-row"><label>y</label><input type="range" min="-180" max="180" step="1" value="180" id="sm-rot-y"><input type="number" min="-180" max="180" step="1" value="180" id="sm-rot-y-n"></div>
+              <div class="sm-field-row"><label>z</label><input type="range" min="-180" max="180" step="1" value="180" id="sm-rot-z"><input type="number" min="-180" max="180" step="1" value="180" id="sm-rot-z-n"></div>
+              <p class="sm-label">Scale</p>
+              <div class="sm-field-row"><label>uniform</label><input type="range" min="0.1" max="3" step="0.05" value="1" id="sm-scale-uniform"><input type="number" min="0.1" max="3" step="0.05" value="1" id="sm-scale-uniform-n"></div>
+              <div class="sm-field-row"><label>x</label><input type="range" min="0.1" max="3" step="0.05" value="1" id="sm-scale-x"><input type="number" min="0.1" max="3" step="0.05" value="1" id="sm-scale-x-n"></div>
+              <div class="sm-field-row"><label>y</label><input type="range" min="0.1" max="3" step="0.05" value="1" id="sm-scale-y"><input type="number" min="0.1" max="3" step="0.05" value="1" id="sm-scale-y-n"></div>
+              <div class="sm-field-row"><label>z</label><input type="range" min="0.1" max="3" step="0.05" value="1" id="sm-scale-z"><input type="number" min="0.1" max="3" step="0.05" value="1" id="sm-scale-z-n"></div>
+            </div>
+          </div>
+
+          <div class="sm-panel">
+            <button type="button" class="sm-panel__head" aria-expanded="false" data-sm-panel-toggle>
+              <i class="bi bi-palette"></i>
+              <span>Color Grading</span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="sm-panel__body sm-panel__body--collapsed">
+              <p class="sm-placeholder">Exposure, contrast, and LUT controls — coming soon.</p>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Grid toggle kept for viewer logic (not shown in UI) -->
+        <input type="checkbox" id="sm-grid" class="sm-visually-hidden" checked aria-hidden="true" tabindex="-1">
+
+        <div id="sm-orion-presets" class="sm-orion-presets" hidden role="group" aria-label="Orion camera views">
+          <button type="button" class="sm-orion-preset__btn" data-orion-preset="Crew Module">Crew Module</button>
+          <button type="button" class="sm-orion-preset__btn" data-orion-preset="European Service">European Service</button>
+          <button type="button" class="sm-orion-preset__btn" data-orion-preset="Solar Arrays">Solar Arrays</button>
+          <button type="button" class="sm-orion-preset__btn" data-orion-preset="Exhaust">Exhaust</button>
+        </div>
+
+        <div id="sm-load-card" class="sm-load-card" hidden aria-live="polite">
+          <div class="sm-load-card__panel">
+            <div class="sm-load-card__ring" aria-hidden="true"></div>
+            <p class="sm-load-card__text" id="sm-load-card-text"></p>
+            <p class="sm-load-card__sub" id="sm-load-card-sub" hidden></p>
+          </div>
+        </div>
+
+        <p class="sm-status" id="sm-status">Ready</p>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="preloader">
+    <div class="line"></div>
+  </div>
+
+  <script src="assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="assets/vendor/swiper/swiper-bundle.min.js"></script>
+  <script src="assets/vendor/glightbox/js/glightbox.min.js"></script>
+  <script src="assets/vendor/aos/aos.js"></script>
+  <script src="assets/vendor/php-email-form/validate.js"></script>
+  <script src="assets/js/main.js?v=intro7"></script>
+  <script type="module" src="assets/js/spatial-maker.js"></script>
+
+</body>
+</html>

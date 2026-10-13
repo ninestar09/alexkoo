@@ -110,7 +110,7 @@ in vec2 vUv;
 out vec4 frag;
 uniform vec2  uAspect;
 uniform vec2  uCubePos;
-uniform float uTime, uSeed, uCube;
+uniform float uTime, uSeed, uCube, uShape;
 uniform mat3  uRot, uRotT;
 uniform vec3  uOmega;
 
@@ -119,7 +119,30 @@ float sdBox(vec3 p, float b){
   vec3 q = abs(p) - vec3(b);
   return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0);
 }
-float sliceSD(vec2 w){ return sdBox(uRotT * vec3(w - cubeC(), 0.0), uCube); }
+float sdCappedCone(vec3 p, float h, float r){
+  vec2 q = vec2(length(p.xz), p.y);
+  vec2 k1 = vec2(r, h);
+  vec2 k2 = vec2(r, 2.0 * h);
+  vec2 ca = vec2(q.x - min(q.x, (q.y < 0.0) ? 0.0 : r), abs(q.y) - h);
+  vec2 cb = q - k1 + k2 * clamp(dot(k1 - q, k2) / dot(k2, k2), 0.0, 1.0);
+  float sgn = (cb.x < 0.0 && ca.y < 0.0) ? -1.0 : 1.0;
+  return sgn * sqrt(min(dot(ca, ca), dot(cb, cb)));
+}
+float sdShape(vec3 p){
+  if (uShape < 0.5) return sdBox(p, uCube);
+  if (uShape < 1.5) return length(p) - uCube * 1.35;
+  if (uShape < 2.5) return (abs(p.x) + abs(p.y) + abs(p.z) - uCube * 2.15) * 0.57735027;
+  if (uShape < 3.5){
+    vec2 d = abs(vec2(length(p.xz), p.y)) - vec2(uCube * 1.15, uCube * 1.35);
+    return min(max(d.x, d.y), 0.0) + length(max(d, 0.0));
+  }
+  if (uShape < 4.5){
+    vec2 q = vec2(length(p.xz) - uCube * 1.15, p.y);
+    return length(q) - uCube * 0.42;
+  }
+  return sdCappedCone(p - vec3(0.0, uCube * 0.15, 0.0), uCube * 1.15, uCube * 1.35);
+}
+float sliceSD(vec2 w){ return sdShape(uRotT * vec3(w - cubeC(), 0.0)); }
 vec2 sliceN(vec2 w){
   float e = 0.003;
   return normalize(vec2(
@@ -129,6 +152,14 @@ vec2 sliceN(vec2 w){
 vec2 surfVel(vec2 w){ return cross(uOmega, vec3(w - cubeC(), 0.0)).xy; }
 float facing(vec2 w){
   vec3 q = uRotT * vec3(w - cubeC(), 0.0);
+  if (uShape > 0.5){
+    float e = 0.004;
+    vec3 n = normalize(vec3(
+      sdShape(q + vec3(e, 0.0, 0.0)) - sdShape(q - vec3(e, 0.0, 0.0)),
+      sdShape(q + vec3(0.0, e, 0.0)) - sdShape(q - vec3(0.0, e, 0.0)),
+      sdShape(q + vec3(0.0, 0.0, e)) - sdShape(q - vec3(0.0, 0.0, e))));
+    return clamp((uRot * n).z * 0.5 + 0.5, 0.0, 1.0);
+  }
   vec3 a = abs(q);
   vec3 n = (a.x >= a.y && a.x >= a.z) ? vec3(sign(q.x), 0.0, 0.0)
          : (a.y >= a.z ? vec3(0.0, sign(q.y), 0.0) : vec3(0.0, 0.0, sign(q.z)));
@@ -406,6 +437,34 @@ void main(){
   vec3 nW = uRot * nB;
   vec3 hitB = roB + rdB * max(tN, 0.0);
   float hitZ = (ro + rd * max(tN, 0.0)).z;
+  if (uShape > 0.5){
+    float rad = s * 2.8;
+    float b0 = dot(roB, rdB);
+    float h0 = b0 * b0 - (dot(roB, roB) - rad * rad);
+    inside = 0.0;
+    thick = 0.0;
+    depth = 0.0;
+    if (h0 > 0.0){
+      float t = max(-b0 - sqrt(h0), 0.0);
+      for (int i = 0; i < 56; i++){
+        float d = sdShape(roB + rdB * t);
+        if (d < 0.0012){ inside = 1.0; break; }
+        t += d;
+        if (t > rad * 2.2) break;
+      }
+      tN = t;
+      hitB = roB + rdB * t;
+      float e2 = 0.0035;
+      nB = normalize(vec3(
+        sdShape(hitB + vec3(e2, 0.0, 0.0)) - sdShape(hitB - vec3(e2, 0.0, 0.0)),
+        sdShape(hitB + vec3(0.0, e2, 0.0)) - sdShape(hitB - vec3(0.0, e2, 0.0)),
+        sdShape(hitB + vec3(0.0, 0.0, e2)) - sdShape(hitB - vec3(0.0, 0.0, e2))));
+      nW = uRot * nB;
+      depth = inside * clamp(1.0 - length(hitB) / rad, 0.15, 1.0);
+      thick = inside * s;
+      hitZ = (ro + rd * max(tN, 0.0)).z;
+    }
+  }
   vec3 Ld = normalize(vec3(-0.42, 0.58, 0.55));
   float face = dot(nW, Ld) * 0.5 + 0.5;
 
@@ -452,6 +511,9 @@ void main(){
   // face coordinates (object space) for the dot grid and wire edges
   vec3 an = abs(nB);
   vec2 tc = (an.x > 0.5 ? hitB.yz : (an.y > 0.5 ? hitB.xz : hitB.xy)) / s;
+  if (uShape > 0.5){
+    tc = ((an.x >= an.y && an.x >= an.z) ? hitB.yz : (an.y >= an.z ? hitB.xz : hitB.xy)) / s;
+  }
   float gDot = 0.0, gOp = 0.0, gStag = 0.0;
   if (inside > 0.5){
     vec2 cell = tc * uGrid * 0.5;
@@ -467,6 +529,11 @@ void main(){
   float ew = fwidth(edgeC) * 1.8 + 0.006;
   float dw = fwidth(depth) * 2.5 + 0.004;
   float wire = max(1.0 - smoothstep(0.0, ew, edgeC), 1.0 - smoothstep(0.0, dw, depth)) * inside;
+  if (uShape > 0.5){
+    float ndv = clamp(abs(dot(nW, rd)), 0.0, 1.0);
+    wire = inside * pow(1.0 - ndv, 5.0) * 0.6;
+    tc = clamp(tc / 1.4, -1.0, 1.0);
+  }
 
   float phi = (texture(uDen, vUv).r + texture(uDen, vUv).g) * 4.5 + pres * 3.0;
   float pw = max(fwidth(phi), 1e-4);
@@ -970,6 +1037,38 @@ export function mountBlackboxHero(root, options = {}) {
   let frameN = 0;
 
   const s = cfg.cubeSize;
+  const SHAPE_IDS = { cube: 0, sphere: 1, octa: 2, cylinder: 3, torus: 4, cone: 5 };
+  let shapeId = SHAPE_IDS[cfg.shape] || 0;
+
+  function sdShapeJS(p) {
+    const b = s;
+    const ax = Math.abs(p[0]), ay = Math.abs(p[1]), az = Math.abs(p[2]);
+    if (shapeId === 1) return Math.hypot(p[0], p[1], p[2]) - b * 1.35;
+    if (shapeId === 2) return (ax + ay + az - b * 2.15) * 0.57735027;
+    if (shapeId === 3) {
+      const d0 = Math.hypot(p[0], p[2]) - b * 1.15;
+      const d1 = ay - b * 1.35;
+      return Math.min(Math.max(d0, d1), 0) + Math.hypot(Math.max(d0, 0), Math.max(d1, 0));
+    }
+    if (shapeId === 4) return Math.hypot(Math.hypot(p[0], p[2]) - b * 1.15, p[1]) - b * 0.42;
+    if (shapeId === 5) {
+      const py = p[1] - b * 0.15;
+      const h = b * 1.15, r = b * 1.35;
+      const qx = Math.hypot(p[0], p[2]), qy = py;
+      const k1x = r, k1y = h, k2x = r, k2y = 2 * h;
+      const cax = qx - Math.min(qx, qy < 0 ? 0 : r);
+      const cay = Math.abs(qy) - h;
+      const dotk = (k1x - qx) * k2x + (k1y - qy) * k2y;
+      const kk = k2x * k2x + k2y * k2y;
+      const t = clamp(dotk / kk, 0, 1);
+      const cbx = qx - k1x + k2x * t;
+      const cby = qy - k1y + k2y * t;
+      const sgn = cbx < 0 && cay < 0 ? -1 : 1;
+      return sgn * Math.sqrt(Math.min(cax * cax + cay * cay, cbx * cbx + cby * cby));
+    }
+    const qx = ax - b, qy = ay - b, qz = az - b;
+    return Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qy, qz), 0);
+  }
 
   function cubeCenter() {
     return cubePos || [G * 0.5, 0.5];
@@ -989,25 +1088,32 @@ export function mountBlackboxHero(root, options = {}) {
   function hitCube(wx, wy) {
     const [ccx, ccy] = cubeCenter();
     const dx = wx - ccx, dy = wy - ccy, dz = -cfg.lens;
-    const len = Math.hypot(dx, dy, dz);
+    const len = Math.hypot(dx, dy, dz) || 1;
     const ro = mulR(RT, 0, 0, cfg.lens);
     const rd = mulR(RT, dx / len, dy / len, dz / len);
-    let tn = -1e9, tf = 1e9;
-    for (let i = 0; i < 3; i++) {
-      const inv = 1 / rd[i];
-      let a = (-s - ro[i]) * inv, b = (s - ro[i]) * inv;
-      if (a > b) [a, b] = [b, a];
-      if (a > tn) tn = a;
-      if (b < tf) tf = b;
+    if (shapeId === 0) {
+      let tn = -1e9, tf = 1e9;
+      for (let i = 0; i < 3; i++) {
+        const inv = 1 / rd[i];
+        let a = (-s - ro[i]) * inv, b = (s - ro[i]) * inv;
+        if (a > b) [a, b] = [b, a];
+        if (a > tn) tn = a;
+        if (b < tf) tf = b;
+      }
+      return tf >= tn && tf >= 0;
     }
-    return tf >= tn && tf >= 0;
+    let t = 0;
+    for (let i = 0; i < 28; i++) {
+      const d = sdShapeJS([ro[0] + rd[0] * t, ro[1] + rd[1] * t, ro[2] + rd[2] * t]);
+      if (d < 0.004) return true;
+      t += d;
+      if (t > 2.2) return false;
+    }
+    return false;
   }
   function sliceSD(wx, wy) {
     const [ccx, ccy] = cubeCenter();
-    const p = mulR(RT, wx - ccx, wy - ccy, 0);
-    const qx = Math.abs(p[0]) - s, qy = Math.abs(p[1]) - s, qz = Math.abs(p[2]) - s;
-    const out = Math.hypot(Math.max(qx, 0), Math.max(qy, 0), Math.max(qz, 0));
-    return out + Math.min(Math.max(qx, qy, qz), 0);
+    return sdShapeJS(mulR(RT, wx - ccx, wy - ccy, 0));
   }
   function firePulse() {
     if (simT - lastPulse < 0.12) return;
@@ -1306,7 +1412,20 @@ export function mountBlackboxHero(root, options = {}) {
     rotFromQuat(q, R, RT);
 
     for (let i = 0; i < 8; i++) {
-      const p = mulR(R, i & 1 ? s : -s, i & 2 ? s : -s, i & 4 ? s : -s);
+      let lx, ly, lz;
+      if (shapeId === 0) {
+        lx = i & 1 ? s : -s;
+        ly = i & 2 ? s : -s;
+        lz = i & 4 ? s : -s;
+      } else {
+        const ang = i * 2.399963;
+        const z0 = 1 - ((i + 0.5) / 8) * 2;
+        const rr = Math.sqrt(Math.max(0, 1 - z0 * z0)) * s * 1.35;
+        lx = Math.cos(ang) * rr;
+        ly = Math.sin(ang) * rr;
+        lz = z0 * s * 1.35;
+      }
+      const p = mulR(R, lx, ly, lz);
       CP[i * 3] = p[0] + ccx;
       CP[i * 3 + 1] = p[1] + ccy;
       CP[i * 3 + 2] = p[2];
@@ -1327,6 +1446,7 @@ export function mountBlackboxHero(root, options = {}) {
     gl.uniform1f(u.uTime, simT);
     gl.uniform1f(u.uSeed, cfg.seed);
     gl.uniform1f(u.uCube, s);
+    if (u.uShape != null) gl.uniform1f(u.uShape, shapeId);
     gl.uniformMatrix3fv(u.uRot, false, R);
     gl.uniformMatrix3fv(u.uRotT, false, RT);
     gl.uniform3f(u.uOmega, omega[0], omega[1], omega[2]);
@@ -1703,6 +1823,9 @@ export function mountBlackboxHero(root, options = {}) {
   raf = requestAnimationFrame(frame);
 
   return {
+    setShape(name) {
+      if (Object.prototype.hasOwnProperty.call(SHAPE_IDS, name)) shapeId = SHAPE_IDS[name];
+    },
     dispose() {
       disposed = true;
       cancelAnimationFrame(raf);

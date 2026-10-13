@@ -929,6 +929,59 @@ document.addEventListener('DOMContentLoaded', () => {
     window._spatialMakerCleanup = mod.init();
   }
 
+  /** SPA: experiments hub stylesheet (interactive3d.html) */
+  function syncExperimentsHead(doc) {
+    const linkId = 'experimentsStyles';
+    const needs = !!doc.getElementById('xp');
+    if (needs) {
+      const incoming = Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))
+        .find((link) => (link.getAttribute('href') || '').includes('experiments.css'));
+      if (incoming && !document.getElementById(linkId)) {
+        const el = document.createElement('link');
+        el.id = linkId;
+        el.rel = 'stylesheet';
+        el.href = incoming.getAttribute('href');
+        el.setAttribute('data-spa-managed', 'true');
+        document.head.appendChild(el);
+      }
+      return;
+    }
+    const existing = document.getElementById(linkId);
+    if (existing && existing.getAttribute('data-spa-managed') === 'true') existing.remove();
+  }
+
+  let experimentsModulePromise = null;
+  let experimentsCleanup = null;
+
+  function disposeExperiments() {
+    if (typeof experimentsCleanup === 'function') {
+      experimentsCleanup();
+      experimentsCleanup = null;
+    }
+  }
+
+  function experimentsModuleUrl() {
+    const scripts = document.querySelectorAll('script[src]');
+    for (let i = 0; i < scripts.length; i++) {
+      const src = scripts[i].getAttribute('src') || '';
+      if (/main\.js(\?|#|$)/.test(src)) {
+        return new URL('experiments.js?v=xp4', scripts[i].src).href;
+      }
+    }
+    return new URL('assets/js/experiments.js', window.location.href).href;
+  }
+
+  async function initExperiments() {
+    if (!document.getElementById('xp')) return;
+    disposeExperiments();
+    if (!experimentsModulePromise) {
+      experimentsModulePromise = import(experimentsModuleUrl());
+    }
+    const mod = await experimentsModulePromise;
+    if (!document.getElementById('xp')) return;
+    experimentsCleanup = mod.init();
+  }
+
   /**
    * About page: .fade-up sections (inline script does not run after SPA innerHTML swap)
    */
@@ -1431,10 +1484,12 @@ document.addEventListener('DOMContentLoaded', () => {
           disposeHeroScrollFrames();
           disposeHeroIntroCubes();
           disposeSpatialMaker();
+          disposeExperiments();
           disposeGalleryDetailNest();
           await syncIntroPlayForHome(false);
           syncPageScopedStyles(doc);
           syncSpatialMakerHead(doc);
+          syncExperimentsHead(doc);
           appContent.innerHTML = newContent.innerHTML;
           if (doc.title) document.title = doc.title;
           setActiveNav(href);
@@ -1452,6 +1507,7 @@ document.addEventListener('DOMContentLoaded', () => {
           initGalleryAurora();
           initAboutFadeUpObserver();
           initSpatialMaker();
+          initExperiments();
           if (document.getElementById('intro-play')) {
             document.body.classList.add('page-home');
             requestAnimationFrame(() => ensureIntroPlayReady({ force: true }));
@@ -1646,6 +1702,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initGalleryAurora();
   initAboutFadeUpObserver();
   initSpatialMaker();
+  initExperiments();
 
   /* AOS early so inner pages can animate header → body; refresh after assets load */
   aos_init();
