@@ -10,7 +10,7 @@ body.page-interactive3d {
     }
 
     .xp {
-      --hdr: 100px;
+      --hdr: 148px;
       --ease: cubic-bezier(0.77, 0, 0.18, 1);
       --dur: 0.9s;
       position: fixed;
@@ -701,7 +701,7 @@ body.page-interactive3d {
 
     @media (max-width: 768px) {
       .xp-shapes { flex-wrap: wrap; }
-      .xp { --hdr: 76px; }
+      .xp { --hdr: 124px; }
       .xp-row__intro { max-width: 70%; }
       .xp-row__art { width: 75%; opacity: 0.9; }
       .xp-row__desc { display: none; }
@@ -715,22 +715,25 @@ body.page-interactive3d {
 
     .xp-lead {
       flex: 0 0 auto;
-      max-height: 132px;
+      max-height: 280px;
       width: 100%;
-      padding: 2px 28px 14px;
+      padding: 18px 28px 72px;
       overflow: hidden;
       text-align: center;
       transition: max-height var(--dur) var(--ease), opacity 0.35s ease, padding var(--dur) var(--ease);
     }
 
     .xp-lead h1 {
-      margin: 0 0 6px;
+      margin: 0 0 12px;
       font-family: var(--font-primary);
-      font-weight: 600;
-      font-size: clamp(22px, 2.2vw, 30px);
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      color: #f4f4f6;
+      font-weight: 700;
+      font-size: clamp(42px, 5.4vw, 72px);
+      letter-spacing: -0.045em;
+      line-height: 0.92;
+      background: linear-gradient(180deg, #ffffff 0%, #f5f5f7 36%, #8d8d98 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
 
     .xp-lead p {
