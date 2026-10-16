@@ -1,7 +1,7 @@
 /**
  * Mounts the alexintro-play interactive cube on #intro-play-stage (homepage only).
  */
-import { mountBlackboxHero } from "./blackbox-hero.js?v=intro7";
+import { mountBlackboxHero } from "./blackbox-hero.js?v=intro8";
 
 const PLAY_OPTIONS = {
   title: "ALEX KOO",

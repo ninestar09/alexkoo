@@ -239,7 +239,7 @@ export function init() {
         if (!document.querySelector('link[href*="blackbox-hero.css"]')) {
           const link = document.createElement('link');
           link.rel = 'stylesheet';
-          link.href = 'assets/css/blackbox-hero.css?v=intro7';
+          link.href = 'assets/css/blackbox-hero.css?v=intro8';
           document.head.appendChild(link);
         }
         import('./blackbox-hero.js?v=shape2').then((mod) => {

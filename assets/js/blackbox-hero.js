@@ -643,6 +643,8 @@ function ensureFont(href) {
 const escapeXml = (s) =>
   String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c]);
 
+let logoGradSeq = 0;
+
 const hasSubtitle = (cfg) =>
   (Array.isArray(cfg.subtitleLines) && cfg.subtitleLines.length > 0) || !!cfg.subtitle;
 
@@ -737,16 +739,27 @@ async function buildLogo(cfg, stacked = false) {
   for (const ln of subBases) ctx.fillText(ln.text, LOGO_W / 2, ln.base);
 
   const ff = `&quot;${escapeXml(family)}&quot;, Arial Black, sans-serif`;
-  const textEl = (ln, s) =>
+  const textEl = (ln, s, extra = "") =>
     `<text x="${LOGO_W / 2}" y="${ln.base.toFixed(1)}" text-anchor="middle" font-family="${ff}" font-weight="${cfg.fontWeight}" font-size="${s.toFixed(1)}" ` +
-    `textLength="${ln.width.toFixed(1)}" lengthAdjust="spacingAndGlyphs">${escapeXml(ln.text)}</text>`;
+    `textLength="${ln.width.toFixed(1)}" lengthAdjust="spacingAndGlyphs"${extra}>${escapeXml(ln.text)}</text>`;
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LOGO_W} ${LOGO_H}" aria-label="${escapeXml([cfg.title, ...subLines].join(" "))}">` +
     bases.map((ln) => textEl(ln, size)).join("") +
-    subBases.map((ln) => textEl(ln, L.ss)).join("") +
     `</svg>`;
+  const gradId = `bbih-sub-rainbow-${++logoGradSeq}`;
+  const subSvg = subBases.length
+    ? `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${LOGO_W} ${LOGO_H}" aria-hidden="true">` +
+      `<defs><linearGradient id="${gradId}" gradientUnits="objectBoundingBox" x1="0" y1="0.5" x2="1" y2="0.5">` +
+      `<stop offset="0%" stop-color="#ffb16a"/>` +
+      `<stop offset="26%" stop-color="#ffb16a"/>` +
+      `<stop offset="52%" stop-color="#f28ac8"/>` +
+      `<stop offset="100%" stop-color="#5bb8ff"/>` +
+      `</linearGradient></defs>` +
+      subBases.map((ln) => textEl(ln, L.ss, ` class="bbih-sub" stroke="url(#${gradId})"`)).join("") +
+      `</svg>`
+    : "";
 
-  return { svg, mask };
+  return { svg, subSvg, mask };
 }
 
 /* ------------------------------------------------------------------ */
@@ -809,11 +822,13 @@ export function mountBlackboxHero(root, options = {}) {
   const canvas = add("bbih-gl", "canvas");
   const dots = add("bbih-dots", "canvas");
   const logo = add("bbih-logo");
+  const logoSub = add("bbih-logo-sub");
   const hud = add("bbih-hud");
   const probeLayer = add("bbih-probes");
   const popupLayer = add("bbih-popups");
   const telemetry = add("bbih-telemetry");
   logo.style.opacity = cfg.logoOpacity;
+  logoSub.style.opacity = cfg.logoOpacity;
   telemetry.style.opacity = cfg.hudOpacity;
   if (cfg.dynamicColor) root.classList.add("is-dynamic-color");
   if (cfg.popups) root.classList.add("is-popups");
@@ -823,9 +838,10 @@ export function mountBlackboxHero(root, options = {}) {
   let logoMask = null;
   let uploadLogo = null;
   let logoStacked = null;
-  const applyLogo = ({ svg, mask }) => {
+  const applyLogo = ({ svg, subSvg, mask }) => {
     if (disposed) return;
     logo.innerHTML = svg;
+    logoSub.innerHTML = subSvg || "";
     logoMask = mask;
     if (uploadLogo) uploadLogo(mask);
   };
@@ -974,7 +990,9 @@ export function mountBlackboxHero(root, options = {}) {
     dots.height = Math.round(cssH * dpr);
     // slightly taller footprint when the name is stacked on two lines
     const stack = isMobile || cssH > cssW * 1.05;
-    logo.style.width = `${logoWidthFrac(cfg, stack) * cssW}px`;
+    const logoW = `${logoWidthFrac(cfg, stack) * cssW}px`;
+    logo.style.width = logoW;
+    logoSub.style.width = logoW;
     if (logoStacked !== stack) refreshLogo(stack);
 
     if (vel) {

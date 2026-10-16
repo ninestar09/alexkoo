@@ -839,6 +839,10 @@ body.page-about #aboutPageInner > .about-orbit-hero {
   }
 }
 
+.header .header-social-links {
+  display: none;
+}
+
 /*--------------------------------------------------------------
 # Mobile: pill nav in header (no slide-out menu)
 --------------------------------------------------------------*/
@@ -928,9 +932,14 @@ body.page-about #aboutPageInner > .about-orbit-hero {
 @media (max-width: 767px) {
   .header .container-fluid {
     flex-wrap: wrap;
+    justify-content: center;
     gap: 10px;
     padding-left: 12px;
     padding-right: 12px;
+  }
+
+  .header__brand-spacer {
+    display: none;
   }
 
   .header .navbar {
@@ -940,6 +949,7 @@ body.page-about #aboutPageInner > .about-orbit-hero {
     position: relative;
     left: auto;
     transform: none;
+    justify-content: center;
     padding: 0 4px;
   }
 
@@ -2194,10 +2204,10 @@ body.page-about #aboutPageInner > .about-orbit-hero {
 /* Contact page head: title + scroll-driven BG frame band */
 .hero {
   width: 100%;
-  min-height: clamp(280px, 48vh, 520px);
-  background: transparent;
+  min-height: clamp(340px, 54vh, 580px);
+  background: #000;
   position: relative;
-  padding: 96px 0 48px 0;
+  padding: 96px 0 7.5rem 0;
   overflow: hidden;
 }
 
@@ -2225,7 +2235,10 @@ body.page-about #aboutPageInner > .about-orbit-hero {
 /* Scroll-driven animation: 16:9 frame sequence â€“ no crop (contain) */
 .hero-scroll-frames {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 6.25rem;
   z-index: 0;
   pointer-events: none;
   display: flex;
@@ -2254,6 +2267,15 @@ body.page-about #aboutPageInner > .about-orbit-hero {
   font-size: clamp(0.92rem, 1.6vw, 1.05rem);
   line-height: 1.55;
   font-family: var(--font-default, inherit);
+  position: relative;
+  z-index: 2;
+  top: 5.5rem;
+}
+
+@media (max-width: 767px) {
+  .hero-contact-quote {
+    top: 6.75rem;
+  }
 }
 
 .hero-scroll-frames img {
@@ -2265,6 +2287,8 @@ body.page-about #aboutPageInner > .about-orbit-hero {
   height: 100%;
   object-fit: contain;
   object-position: center;
+  -webkit-mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 78%, transparent 100%);
 }
 
 .hero .container {
@@ -2945,8 +2969,39 @@ body.page-about #aboutPageInner > .about-orbit-hero {
 }
 
 .footer .copyright {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.65rem 0.9rem;
   text-align: center;
   color: rgba(255, 255, 255, 0.8);
+}
+
+.footer-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.footer-social a,
+.contact-social {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 16px;
+  line-height: 1;
+  display: inline-flex;
+}
+
+.footer-social a:hover,
+.contact-social:hover {
+  color: #fff;
+}
+
+.contact-email-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.7rem;
 }
 
 .footer .credits {

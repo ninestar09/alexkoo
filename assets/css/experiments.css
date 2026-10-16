@@ -390,29 +390,6 @@ body.page-interactive3d {
       transform: translateX(5px);
     }
 
-    .xp-row__plus {
-      position: absolute;
-      right: 22px;
-      bottom: 18px;
-      z-index: 3;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      border: 1px solid rgba(255, 255, 255, 0.35);
-      background: rgba(255, 255, 255, 0.06);
-      backdrop-filter: blur(6px);
-      color: #f4f4f6;
-      display: grid;
-      place-items: center;
-      cursor: pointer;
-      transition: transform 0.4s var(--ease), background 0.3s ease;
-    }
-
-    .xp-row__plus:hover {
-      background: rgba(255, 255, 255, 0.16);
-      transform: rotate(90deg);
-    }
-
     /* Thin neighbor strip, visible while another row is open */
     .xp-row__peek {
       display: none;
@@ -451,8 +428,7 @@ body.page-interactive3d {
     }
 
     .xp.has-open .xp-row:not(.is-open) .xp-row__intro,
-    .xp.has-open .xp-row:not(.is-open) .xp-row__art,
-    .xp.has-open .xp-row:not(.is-open) .xp-row__plus {
+    .xp.has-open .xp-row:not(.is-open) .xp-row__art {
       opacity: 0;
       pointer-events: none;
     }
@@ -479,11 +455,6 @@ body.page-interactive3d {
       filter: blur(14px) saturate(1.1);
       transform: scale(1.08);
       cursor: default;
-    }
-
-    .xp-row.is-open .xp-row__plus {
-      opacity: 0;
-      pointer-events: none;
     }
 
     /* "Top/bottom closing a little" squeeze used when switching rows */
@@ -715,7 +686,7 @@ body.page-interactive3d {
 
     .xp-lead {
       flex: 0 0 auto;
-      max-height: 280px;
+      max-height: 520px;
       width: 100%;
       padding: 18px 28px 72px;
       overflow: hidden;
@@ -742,6 +713,10 @@ body.page-interactive3d {
       font-size: 14px;
       line-height: 1.55;
       color: rgba(244, 244, 246, 0.62);
+    }
+
+    .xp-lead p + p {
+      margin-top: 0.85em;
     }
 
     .xp.has-open .xp-lead {

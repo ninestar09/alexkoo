@@ -45,30 +45,47 @@
   z-index: 4;
 }
 
-.bbihero .bbih-logo {
+.bbihero .bbih-logo,
+.bbihero .bbih-logo-sub {
   position: absolute;
   left: 50%;
   top: 50%;
   transform: translate(-50%, -50%);
-  mix-blend-mode: difference;
   pointer-events: none;
+}
+
+.bbihero .bbih-logo {
+  mix-blend-mode: difference;
   z-index: 5;
 }
 
-.bbihero.is-stacked-logo .bbih-logo {
+.bbihero .bbih-logo-sub {
+  z-index: 6;
+}
+
+.bbihero.is-stacked-logo .bbih-logo,
+.bbihero.is-stacked-logo .bbih-logo-sub {
   /* give two-line mobile titles a bit more presence */
   max-width: 78vw;
 }
 
-.bbihero.is-stacked-logo.has-logo-sub .bbih-logo {
+.bbihero.is-stacked-logo.has-logo-sub .bbih-logo,
+.bbihero.is-stacked-logo.has-logo-sub .bbih-logo-sub {
   max-width: 92vw;
 }
 
-.bbihero .bbih-logo svg {
+.bbihero .bbih-logo svg,
+.bbihero .bbih-logo-sub svg {
   display: block;
   width: 100%;
   height: auto;
   overflow: visible;
+}
+
+.bbihero .bbih-logo-sub text {
+  fill: none;
+  stroke-width: 1.25px;
+  vector-effect: non-scaling-stroke;
 }
 
 .bbihero .bbih-logo text {
